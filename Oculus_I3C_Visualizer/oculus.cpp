@@ -37,6 +37,7 @@ void Oculus::render(const char* filename)
     {
         data.hmd = &m_hmd;
         data.filename = filename;
+        data.end = false;
 
         m_threadHandle = CreateThread(0, 0, renderWorkFunction, &data, 0, &m_threadID);
     }
@@ -44,20 +45,25 @@ void Oculus::render(const char* filename)
 
 void Oculus::shutdownOculus()
 {
+    data.end = true;
+    Sleep(200);
     if(m_threadID != 0){
         CloseHandle(m_threadHandle);
         m_threadID = 0;
     }
+
     ovrHmd_Destroy(m_hmd);
     ovr_Shutdown();
 }
 
 DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
 {
+    //Data from class
     ThreadData *data = (ThreadData*)lpParameter;
     ovrHmd hmd = *(ovrHmd*)data->hmd;
     const char* filename = data->filename;
 
+    // Oculus timing for prediction
     ovrFrameTiming frameTiming;
 
     // Rendering settings
@@ -67,7 +73,11 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
                                                     hmd->DefaultEyeFov[1], 1.0f);
 
 
-    while(hmd){
+    //Creation of the rendering window
+    RenderingWidget *renderWidget = new RenderingWidget();
+    //TODO: pass recommended size
+
+    while(hmd && !data->end){
         frameTiming = ovrHmd_BeginFrameTiming(hmd, 0);
         ovrTrackingState TrackingState = ovrHmd_GetTrackingState(hmd,
                                                           frameTiming.ScanoutMidpointSeconds);
@@ -75,20 +85,28 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
         if(TrackingState.StatusFlags & (ovrStatus_OrientationTracked |
                                           ovrStatus_PositionTracked)){
             Posef pose = TrackingState.HeadPose.ThePose;
-            cout << "Pos and ori tracked!" << endl;
+
             float yaw, pitch, roll;
             pose.Rotation.GetEulerAngles<Axis_Y, Axis_X, Axis_Z>(&yaw, &pitch, &roll);
 
+            //DEBUG
             cout << "yaw: "   << RadToDegree(yaw)   << endl;
             cout << "pitch: " << RadToDegree(pitch) << endl;
             cout << "roll: "  << RadToDegree(roll)  << endl;
-
             cout << "Filename: " << filename << endl;
-            Sleep(50);
 
+            //Update rendering widget
+            //TODO
+
+            Sleep(10);
             ovrHmd_EndFrameTiming(hmd);
         }
     }
 
+    // Delete widget
+    delete renderWidget;
+
+    // DEBUG
+    cout << "out" << endl;
     return 0;
 }

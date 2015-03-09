@@ -16,10 +16,12 @@ INCLUDEPATH += "OculusSDK/LibOVR/Include"
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    oculus.cpp
+    oculus.cpp \
+    renderingwidget.cpp
 
 HEADERS  += mainwindow.h \
-    oculus.h
+    oculus.h \
+    renderingwidget.h
 
 FORMS    += mainwindow.ui
 

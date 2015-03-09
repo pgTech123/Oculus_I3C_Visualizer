@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include "OVR_CAPI.h"
 #include "Kernel/OVR_Math.h"
+#include "renderingwidget.h"
 
 // DEBUG PURPOSE ONLY
 #include <iostream>
@@ -19,6 +20,7 @@ using namespace OVR;
 DWORD WINAPI renderWorkFunction(LPVOID lpParameter);
 
 typedef struct{
+    bool end;
     ovrHmd *hmd;
     const char* filename;
 }ThreadData;
