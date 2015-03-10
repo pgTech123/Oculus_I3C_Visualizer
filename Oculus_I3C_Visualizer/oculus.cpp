@@ -32,7 +32,7 @@ int Oculus::initOculus()
 
 void Oculus::render(const char* filename)
 {
-    //DO NOT ALLOW TO START THIS THREAD TWICE
+    //DO NOT ALLOW HAVE THIS THREAD RUNNING TWICE
     if(m_threadID == 0 && m_hmd)
     {
         data.hmd = &m_hmd;
@@ -58,7 +58,7 @@ void Oculus::shutdownOculus()
 
 DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
 {
-    //Data from class
+    //Data from the Oculus class
     ThreadData *data = (ThreadData*)lpParameter;
     ovrHmd hmd = *(ovrHmd*)data->hmd;
     const char* filename = data->filename;
@@ -66,37 +66,57 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
     // Oculus timing for prediction
     ovrFrameTiming frameTiming;
 
-    // Rendering settings
+    // Initialize Rendering
     Sizei recommenedTex0Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left,
                                                     hmd->DefaultEyeFov[0], 1.0f);
     Sizei recommenedTex1Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right,
                                                     hmd->DefaultEyeFov[1], 1.0f);
 
+    ovrEyeRenderDesc EyeRenderDesc[2];
+    ovrVector3f eyeViewOffset[2] = {EyeRenderDesc[0].HmdToEyeViewOffset,
+                                    EyeRenderDesc[1].HmdToEyeViewOffset};
+
+
 
     //Creation of the rendering window
     RenderingWidget *renderWidget = new RenderingWidget();
-    //TODO: pass recommended size
+    renderWidget->openFile(filename);
 
     while(hmd && !data->end){
         frameTiming = ovrHmd_BeginFrameTiming(hmd, 0);
         ovrTrackingState TrackingState = ovrHmd_GetTrackingState(hmd,
-                                                          frameTiming.ScanoutMidpointSeconds);
+                                              frameTiming.ScanoutMidpointSeconds);
 
         if(TrackingState.StatusFlags & (ovrStatus_OrientationTracked |
-                                          ovrStatus_PositionTracked)){
-            Posef pose = TrackingState.HeadPose.ThePose;
-
+                                          ovrStatus_PositionTracked))
+        {
             float yaw, pitch, roll;
-            pose.Rotation.GetEulerAngles<Axis_Y, Axis_X, Axis_Z>(&yaw, &pitch, &roll);
+            ovrPosef headPose;
 
-            //DEBUG
-            cout << "yaw: "   << RadToDegree(yaw)   << endl;
-            cout << "pitch: " << RadToDegree(pitch) << endl;
-            cout << "roll: "  << RadToDegree(roll)  << endl;
-            cout << "Filename: " << filename << endl;
+            for(int eyeIndex = 0; eyeIndex < ovrEye_Count; eyeIndex++)
+            {
+                Posef pose = TrackingState.HeadPose.ThePose;
+                pose.Rotation.GetEulerAngles<Axis_Y, Axis_X, Axis_Z>(&yaw, &pitch, &roll);
 
-            //Update rendering widget
-            //TODO
+                ovrEyeType eye = hmd->EyeRenderOrder[eyeIndex];
+
+                headPose = ovrHmd_GetHmdPosePerEye(hmd, eye);
+
+                //Update rendering widget
+                renderWidget->setRotation(yaw, pitch, roll);
+                if(eye == ovrEye_Left){
+                    renderWidget->setLeftEyePosition(headPose.Position.x + eyeViewOffset[eye].x,
+                                                     headPose.Position.y + eyeViewOffset[eye].y,
+                                                     headPose.Position.z + eyeViewOffset[eye].z);
+                    renderWidget->renderLeftEye();
+                }
+                else if(eye == ovrEye_Right){
+                    renderWidget->setRightEyePosition(headPose.Position.x + eyeViewOffset[eye].x,
+                                                      headPose.Position.y + eyeViewOffset[eye].y,
+                                                      headPose.Position.z + eyeViewOffset[eye].z);
+                    renderWidget->renderRightEye();
+                }
+            }
 
             Sleep(10);
             ovrHmd_EndFrameTiming(hmd);
