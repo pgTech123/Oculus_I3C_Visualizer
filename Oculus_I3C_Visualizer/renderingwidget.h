@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QDesktopWidget>
 
+#include "I3COculusEngine/i3coculusengine.h"
+
 // DEBUG PURPOSE ONLY
 #include <iostream>
 using namespace std;

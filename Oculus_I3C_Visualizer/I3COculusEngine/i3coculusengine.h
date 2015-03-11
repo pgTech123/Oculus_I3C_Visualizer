@@ -11,6 +11,8 @@
 #ifndef I3COCULUSENGINE_H
 #define I3COCULUSENGINE_H
 
+#include "Utils/gvtransform.h"
+
 /* **********************************************************************
  * The purpose of this class is to give an easy access
  * to manipulate I3C file and to use the optimized render
@@ -37,8 +39,8 @@ public:
     void setImageSize(int width, int height);
 
 
-    void setRotation(double, double, double);
-    void setPosition(double, double, double);
+    void setRotation(double yaw, double pitch, double roll);
+    void setPosition(double x, double y, double z);
 
     void generateImage();
 
@@ -46,6 +48,8 @@ public:
 
 private:
     unsigned char* m_ucData;
+
+    Transform m_Transform;
 };
 
 #endif // I3COCULUSENGINE_H

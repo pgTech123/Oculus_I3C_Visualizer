@@ -1,18 +1,23 @@
 #include "gvtransform.h"
 
-GVTransform::GVTransform()
+Transform::Transform()
 {
     setAngles(0,0);
 }
 
-void GVTransform::setAngles(double dAngleX, double dAngleY, double dAngleZ)
+void Transform::setAngles(double dAngleX, double dAngleY, double dAngleZ)
 {
     m_dAngleX = dAngleX;
     m_dAngleY = dAngleY;
     m_dAngleZ = dAngleZ;
 }
 
-void GVTransform::setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY, int iSideLenght)
+void Transform::setTranslation(double x ,double y, double z)
+{
+    //TODO
+}
+
+void Transform::setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY, int iSideLenght)
 {
     m_iCenterPointX = iCenterPointX;
     m_iCenterPointY = iCenterPointY;
@@ -50,28 +55,32 @@ void GVTransform::setUnrotatedCornersCorners(int iCenterPointX, int iCenterPoint
     m_iUnrotatedCornerZ[7] = -1*(iSideLenght/2);
 }
 
-void GVTransform::computeRotation(double *dScreenRotatedCornerX, double *dScreenRotatedCornerY, double *dRotatedCornerZ)
+void Transform::computeTransform(double *dScreenTransformedCornerX,
+                                   double *dScreenTransformedCornerY,
+                                   double *dTransformedCornerZ)
 {
     generateRotationMatrix();
 
     /* Compute Rotated Points */
     for(int i = 0; i < 8; i++)
     {
-        dScreenRotatedCornerX[i] = m_dRotationMatrix[0][0]*m_iUnrotatedCornerX[i] +
+        dScreenTransformedCornerX[i] = m_dRotationMatrix[0][0]*m_iUnrotatedCornerX[i] +
                                    m_dRotationMatrix[0][1]*m_iUnrotatedCornerY[i] +
                                    m_dRotationMatrix[0][2]*m_iUnrotatedCornerZ[i] + m_iCenterPointX;
 
-        dScreenRotatedCornerY[i] = m_dRotationMatrix[1][0]*m_iUnrotatedCornerX[i] +
+        dScreenTransformedCornerY[i] = m_dRotationMatrix[1][0]*m_iUnrotatedCornerX[i] +
                                    m_dRotationMatrix[1][1]*m_iUnrotatedCornerY[i] +
                                    m_dRotationMatrix[1][2]*m_iUnrotatedCornerZ[i] + m_iCenterPointY;
 
-        dRotatedCornerZ[i] = m_dRotationMatrix[2][0]*m_iUnrotatedCornerX[i] +
+        dTransformedCornerZ[i] = m_dRotationMatrix[2][0]*m_iUnrotatedCornerX[i] +
                                    m_dRotationMatrix[2][1]*m_iUnrotatedCornerY[i] +
                                    m_dRotationMatrix[2][2]*m_iUnrotatedCornerZ[i];
+
+        //TODO: APPLY TRANSLATION HERE
     }
 }
 
-void GVTransform::generateRotationMatrix()
+void Transform::generateRotationMatrix()
 {
     /* Precomputation */
     double cosAngleX = cos(m_dAngleX);

@@ -19,7 +19,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::closeEvent(QCloseEvent* ev)
+void MainWindow::closeEvent(QCloseEvent*)
 {
     m_Oculus->shutdownOculus();
     delete m_Oculus;

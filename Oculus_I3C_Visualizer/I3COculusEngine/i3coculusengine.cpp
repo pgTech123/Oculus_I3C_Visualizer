@@ -23,7 +23,8 @@ I3COculusEngine::~I3COculusEngine()
 
 int I3COculusEngine::openI3CFile(const char* filename)
 {
-
+    //TODO: Open file
+    //TODO: setUnrotatedCorners
 }
 
 void I3COculusEngine::setImageSize(int width, int height)
@@ -31,19 +32,22 @@ void I3COculusEngine::setImageSize(int width, int height)
     m_ucData = new unsigned char[width * height];
 }
 
-void I3COculusEngine::setRotation(double, double, double)
+void I3COculusEngine::setRotation(double yaw, double pitch, double roll)
 {
-
+    m_Transform.setAngles(yaw, pitch, roll);
 }
 
-void I3COculusEngine::setPosition(double, double, double)
+void I3COculusEngine::setPosition(double x, double y, double z)
 {
-
+    m_Transform.setTranslation(x, y, z);
 }
 
 void I3COculusEngine::generateImage()
 {
+    //Apply transform
+    //m_Transform.computeTransform(OUTPUT);
 
+    //Render considering distortion
 }
 
 unsigned char* I3COculusEngine::getData()

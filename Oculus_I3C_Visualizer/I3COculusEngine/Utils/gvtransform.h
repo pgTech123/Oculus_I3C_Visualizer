@@ -13,17 +13,20 @@ using namespace std;
  * The purpose of this class is to abstract the the transformations maths.
  **************************************************************************/
 
-class GVTransform
+class Transform
 {
 public:
-    GVTransform();
+    Transform();
 
     /* Setters */
     void setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY, int iSideLenght);
     void setAngles(double dAngleX, double dAngleY, double dAngleZ = 0);
+    void setTranslation(double x ,double y, double z);
 
     /* Computing */
-    void computeRotation(double* dScreenRotatedCornerX, double* dScreenRotatedCornerY, double* dRotatedCornerZ);
+    void computeTransform(double* dScreenTransformedCornerX,
+                          double* dScreenTransformedCornerY,
+                          double* dTransformedCornerZ);
 
     /* Matrix Op */
     void generateRotationMatrix();
