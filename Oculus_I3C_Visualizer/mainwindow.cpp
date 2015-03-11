@@ -17,6 +17,10 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::closeEvent(QCloseEvent* ev)
+{
     m_Oculus->shutdownOculus();
     delete m_Oculus;
 }

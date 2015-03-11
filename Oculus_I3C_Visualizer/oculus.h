@@ -19,10 +19,17 @@ using namespace OVR;
 
 DWORD WINAPI renderWorkFunction(LPVOID lpParameter);
 
+bool positionTracked(ovrTrackingState ts);
+
+void render(ovrHmd hmd,
+            ovrVector3f eyeViewOffset[2],
+            ovrTrackingState ts,
+            RenderingWidget* renderingWidget);
+
 typedef struct{
     bool end;
     ovrHmd *hmd;
-    const char* filename;
+    RenderingWidget* p_renderingWidget;
 }ThreadData;
 
 
@@ -42,6 +49,8 @@ private:
     ThreadData data;
 
     ovrHmd m_hmd;
+
+    RenderingWidget* m_RenderingWidget;
 };
 
 #endif // OCULUS_H

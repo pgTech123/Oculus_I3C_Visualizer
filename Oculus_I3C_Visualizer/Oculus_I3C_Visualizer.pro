@@ -17,11 +17,14 @@ INCLUDEPATH += "OculusSDK/LibOVR/Include"
 SOURCES += main.cpp\
         mainwindow.cpp \
     oculus.cpp \
-    renderingwidget.cpp
+    renderingwidget.cpp \
+    i3coculusengine.cpp \
+    I3COculusEngine/i3coculusengine.cpp
 
 HEADERS  += mainwindow.h \
     oculus.h \
-    renderingwidget.h
+    renderingwidget.h \
+    I3COculusEngine/i3coculusengine.h
 
 FORMS    += mainwindow.ui
 

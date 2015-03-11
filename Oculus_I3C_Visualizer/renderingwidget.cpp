@@ -3,13 +3,19 @@
 RenderingWidget::RenderingWidget(QWidget *parent) :
     QWidget(parent)
 {
+    //Fill the oculus
+    //TODO
+    this->setFixedHeight(100);
+    this->setFixedWidth(100);
+
+    //Display in the Oculus
+    //TODO
     QDesktopWidget asd;
     cout << asd.primaryScreen() << endl;
 }
 
 RenderingWidget::~RenderingWidget()
 {
-
 }
 
 bool RenderingWidget::openFile(const char* filename)
@@ -43,11 +49,11 @@ void RenderingWidget::setRightEyePosition(double x, double y, double z)
 
 void RenderingWidget::renderLeftEye()
 {
-
+    this->show();
 }
 
 void RenderingWidget::renderRightEye()
 {
-
+    this->show();
 }
 
