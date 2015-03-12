@@ -11,25 +11,44 @@
 
 I3COculusEngine::I3COculusEngine()
 {
-    m_ucData = NULL;
+    m_pucData = NULL;
+    m_pbPixelsFilled = NULL;
+    m_iArrCubeAtLevel = NULL;
+    m_pGVImageArray = NULL;
 }
 
 I3COculusEngine::~I3COculusEngine()
 {
-    if(m_data != NULL){
-        delete[] m_ucData;
-    }
+    clearImageInMemory();
 }
 
 int I3COculusEngine::openI3CFile(const char* filename)
 {
-    //TODO: Open file
-    //TODO: setUnrotatedCorners
+    fstream file;
+
+    file.open(filename);
+
+    if(file.is_open()){
+        int iError = readImageFile(&file);
+        file.close();
+        return iError;
+    }
+    else{
+        return UNABLE_TO_OPEN_FILE;
+    }
 }
 
-void I3COculusEngine::setImageSize(int width, int height)
+bool I3COculusEngine::setImageSize(int width, int height)
 {
-    m_ucData = new unsigned char[width * height];
+    if(m_pucData == NULL && m_pbPixelsFilled == NULL){
+        m_width = width;
+        m_height = height;
+        int imageDataSize = width * height * 3;
+        m_pucData = new unsigned char[imageDataSize];
+        m_pbPixelsFilled = new bool[imageDataSize];
+        return true;
+    }
+    return false;
 }
 
 void I3COculusEngine::setRotation(double yaw, double pitch, double roll)
@@ -44,13 +63,273 @@ void I3COculusEngine::setPosition(double x, double y, double z)
 
 void I3COculusEngine::generateImage()
 {
-    //Apply transform
-    //m_Transform.computeTransform(OUTPUT);
+    int width_x_height = m_width * m_height;
+    //Initialize every pixels as empty
+    for(int i = 0; i < width_x_height; i++)
+    {
+        m_p_bPixelFilled[i] = false;
+    }
 
-    //Render considering distortion
+    //Compute cube corners projected on the frame
+    transform.computeTransform(m_dScreenTransformedCornerX,
+                               m_dScreenTransformedCornerY,
+                               m_dDstFromScreenTransformed);
+
+
+    //Sort points on Z axis by distance
+    sort(m_dDstFromScreenTransformed, m_dCornerSortedByDst);
+
+    //Rendering
+    ApplyRotation_and_Render(m_dScreenTransformedCornerX,
+                             m_dScreenTransformedCornerY,
+                             m_dCornerSortedByDst,
+                             (double)m_iCenterPointX,
+                             (double)m_iCenterPointY);
+
+    //Fill every pixels left empty with black
+    for(int i = 0; i < width_x_height; i++)
+    {
+        if(m_p_bPixelFilled[i] == false)
+        {
+            m_p_ucImageData[3*i] = 0;
+            m_p_ucImageData[(3*i) + 1] = 0;
+            m_p_ucImageData[(3*i) + 2] = 0;
+        }
+    }
+
+    //TODO: consider distortion while rendering
 }
 
 unsigned char* I3COculusEngine::getData()
 {
-    return m_ucData;
+    return m_pucData;
 }
+
+int I3COculusEngine::readImageFile(fstream *file)
+{
+    //Delete previous image data
+    clearImageInMemory();
+
+    int iError;
+
+    //Read Cube Side Lenght
+    int iSideLenghtUnverified;
+    *file >> iSideLenghtUnverified;
+    iError = verifyAndAssignSideLength(iSideLenghtUnverified);
+    if(iError != NO_ERRORS){
+        return iError;
+    }
+    //cout << "Side Lenght: " << m_iSideLenght << endl;     // Debug
+
+    //Preparing to Read Image
+    setImageCenterPoint();
+    m_Transform.setUnrotatedCornersCorners(m_iCenterPointX, m_iCenterPointY, m_iSideLength);
+    setNumberOfLevels();
+
+    /* Read Data */
+    readNumOfMaps(file);
+    iError = readCubes(file);
+    if(iError != NO_ERRORS){
+        return iError;
+    }
+
+    return NO_ERRORS;
+}
+
+int I3COculusEngine::verifyAndAssignSideLength(int iSideLength)
+{
+    if(iSideLength <= 1){
+        m_iSideLength = 0;
+        return INVALID_CUBE_SIZE;
+    }
+    else if(!isBase2(iSideLength)){
+        m_iSideLength = 0;
+        return SIZE_NOT_BASE_2;
+    }
+    else{
+        m_iSideLength = iSideLength;
+        return NO_ERRORS;
+    }
+}
+
+void I3COculusEngine::setImageCenterPoint()
+{
+    m_iCenterPointX = m_width/2;
+    m_iCenterPointY = m_height/2;
+}
+
+void I3COculusEngine::setNumberOfLevels()
+{
+    m_iNumberOfLevels = firstHighBit(m_iSideLength);
+    //cout << "Number of Levels: " << m_iNumberOfLevels << endl;    //Debug
+    m_iArrCubeAtLevel = new int[m_iNumberOfLevels];
+}
+
+void I3COculusEngine::readNumOfMaps(fstream *file)
+{
+    int iBuffer = 0;
+    m_iTotalNumberOfCubes = 0;
+
+    //Store cubes at each level and count the total number of cubes
+    for(int i = 0; i < m_iNumberOfLevels; i++)
+    {
+        *file >> iBuffer;
+        m_iArrCubeAtLevel[i] = iBuffer;
+        m_iTotalNumberOfCubes += iBuffer;
+    }
+    //cout << "Number of Cubes: " << m_iNumberOfCubes << endl;  //Debug
+
+    //One of the cube is 'this' so we remove 1
+    m_iTotalNumberOfCubes--;
+
+    //Create Cube Pointer Array
+    m_pGVImageArray = new GVIndexCube*[m_iTotalNumberOfCubes];
+}
+
+int I3COculusEngine::readCubes(fstream *file)
+{
+    int iError = readPixelCubes(file);
+    if(iError != NO_ERRORS){
+        return iError;
+    }
+    iError = readIndexCubes(file);
+    if(iError != NO_ERRORS){
+        return iError;
+    }
+
+    return NO_ERRORS;
+}
+
+int I3COculusEngine::readPixelCubes(fstream *file)
+{
+    unsigned char ucMap = 0;
+    int iBufRedArr[8];
+    int iBufGreenArr[8];
+    int iBufBlueArr[8];
+    int iCubeBeingWritten = 0;
+    int iNumOfPixels;
+    int iError;
+
+    /* Read Pixel Cubes */
+    for(int i = 0; i < m_iArrCubeAtLevel[0]; i++)
+    {
+        /* Create Cube */
+        m_pGVImageArray[iCubeBeingWritten] = new GVIndexCube(&m_width,
+                                                             &m_height,
+                                                             &*m_pucData,
+                                                             &*m_pbPixelsFilled);
+        iError = readMap(file, &ucMap, &iNumOfPixels);
+        if(iError != NO_ERRORS){
+            return iError;
+        }
+
+        for(int j = 0; j < iNumOfPixels; j++)
+        {
+            //PIXEL READING
+            *file >> iBufRedArr[j];
+            *file >> iBufGreenArr[j];
+            *file >> iBufBlueArr[j];
+        }
+
+        if(m_iNumberOfLevels == 1){
+            this->addPixelsCube(ucMap,
+                                iBufRedArr,
+                                iBufGreenArr,
+                                iBufBlueArr);
+        }
+        else{
+            m_pGVImageArray[iCubeBeingWritten]->addPixelsCube(ucMap,
+                                                              iBufRedArr,
+                                                              iBufGreenArr,
+                                                              iBufBlueArr);
+        }
+
+        iCubeBeingWritten ++;
+    }
+    return NO_ERRORS;
+}
+
+int I3COculusEngine::readIndexCubes(fstream *file)
+{
+    unsigned char ucMap = 0;
+    int iNumOfChild = 0;
+    int iAddressCubesCursorOffset = 0;
+    int iCubeBeingWritten = m_iArrCubeAtLevel[0];
+    int iError;
+
+    for(int level = 1; level < m_iNumberOfLevels; level++)
+    {
+        for(int i = 0; i < m_iArrCubeAtLevel[level]; i++)
+        {
+            iError = readMap(file, &ucMap, &iNumOfChild);
+            if(iError != NO_ERRORS){
+                return iError;
+            }
+
+            /* Set cube with child addresses */
+            if(m_iNumberOfLevels == level+1){
+                //cout << "Master Cube" << endl;
+                this->addReferenceCube(ucMap, &m_pGVImageArray[iAddressCubesCursorOffset]);
+            }
+            else{
+                m_pGVImageArray[iCubeBeingWritten] = new GVIndexCube(&m_width,
+                                                                     &m_height,
+                                                                     &*m_pucData,
+                                                                     &*m_pbPixelsFilled);
+
+                m_pGVImageArray[iCubeBeingWritten]->addReferenceCube(ucMap,
+                                                                     &m_pGVImageArray[iAddressCubesCursorOffset]);
+            }
+
+            /* Update Offset */
+            iAddressCubesCursorOffset += iNumOfChild;
+            iCubeBeingWritten++;
+        }
+    }
+
+    return NO_ERRORS;
+}
+
+int I3COculusEngine::readMap(fstream *file, unsigned char* ucMap, int* iNumOfPix)
+{
+    int iBufMap;
+    *file >> iBufMap;
+    *iNumOfPix = numberHighBits(iBufMap);
+    if(*iNumOfPix > 8){
+        return FILE_CORRUPTED;
+    }
+    *ucMap = (unsigned char)iBufMap;
+
+    /* Debug */
+    //cout << "Number of Pixels in Cube: " << *iNumOfPix << endl;
+    //cout << "Map: " << iBufMap << endl;
+
+    return NO_ERRORS;
+}
+
+void I3COculusEngine::clearImageInMemory()
+{
+    if(m_pucData != NULL){
+        delete[] m_pucData;
+        m_pucData = NULL;
+    }
+    if(m_pbPixelsFilled != NULL){
+        delete[] m_pbPixelsFilled;
+        m_pbPixelsFilled = NULL;
+    }
+
+    if(m_pGVImageArray != NULL){
+        for(int i = 0; i< m_iTotalNumberOfCubes ; i++){
+            delete m_pGVImageArray[i];
+        }
+        delete[] m_pGVImageArray;
+        m_pGVImageArray = NULL;
+    }
+
+    if(m_iArrCubeAtLevel != NULL){
+        delete[] m_iArrCubeAtLevel;
+        m_iArrCubeAtLevel = NULL;
+    }
+}
+
+

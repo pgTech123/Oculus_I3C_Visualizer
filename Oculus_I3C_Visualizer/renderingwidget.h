@@ -32,6 +32,9 @@ signals:
 
 public slots:
 
+private:
+    I3COculusEngine *m_I3COculusEngine;
+
 };
 
 #endif // RENDERINGWIDGET_H

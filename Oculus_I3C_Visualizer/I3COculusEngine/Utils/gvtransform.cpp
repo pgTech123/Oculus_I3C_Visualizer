@@ -56,8 +56,8 @@ void Transform::setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY,
 }
 
 void Transform::computeTransform(double *dScreenTransformedCornerX,
-                                   double *dScreenTransformedCornerY,
-                                   double *dTransformedCornerZ)
+                                 double *dScreenTransformedCornerY,
+                                 double *dTransformedCornerZ)
 {
     generateRotationMatrix();
 

@@ -18,17 +18,18 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     oculus.cpp \
     renderingwidget.cpp \
-    i3coculusengine.cpp \
     I3COculusEngine/i3coculusengine.cpp \
     I3COculusEngine/Utils/gvbinaryfunctions.cpp \
-    I3COculusEngine/Utils/gvtransform.cpp
+    I3COculusEngine/Utils/gvtransform.cpp \
+    I3COculusEngine/i3cindexcube.cpp
 
 HEADERS  += mainwindow.h \
     oculus.h \
     renderingwidget.h \
     I3COculusEngine/i3coculusengine.h \
     I3COculusEngine/Utils/gvbinaryfunctions.h \
-    I3COculusEngine/Utils/gvtransform.h
+    I3COculusEngine/Utils/gvtransform.h \
+    I3COculusEngine/i3cindexcube.h
 
 FORMS    += mainwindow.ui
 
