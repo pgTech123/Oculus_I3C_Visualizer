@@ -71,7 +71,7 @@ void I3COculusEngine::generateImage()
     }
 
     //Compute cube corners projected on the frame
-    transform.computeTransform(m_dScreenTransformedCornerX,
+    m_Transform.computeTransform(m_dScreenTransformedCornerX,
                                m_dScreenTransformedCornerY,
                                m_dDstFromScreenTransformed);
 

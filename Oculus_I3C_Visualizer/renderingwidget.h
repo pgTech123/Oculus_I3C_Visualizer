@@ -3,6 +3,11 @@
 
 #include <QWidget>
 #include <QDesktopWidget>
+#include <QApplication>
+#include <QRect>
+#include <QLabel>
+#include <QHBoxLayout>
+#include <QPixmap>
 
 #include "I3COculusEngine/i3coculusengine.h"
 
@@ -11,6 +16,8 @@
 using namespace std;
 // END DEBUG PURPOSE
 
+//TODO: on_escape_click -> close this window
+
 class RenderingWidget : public QWidget
 {
     Q_OBJECT
@@ -18,6 +25,7 @@ public:
     explicit RenderingWidget(QWidget *parent = 0);
     virtual ~RenderingWidget();
 
+    void setScreenResolution(int width, int height);
     bool openFile(const char* filename);
 
     void setRotation(double yaw, double pitch, double roll);
@@ -34,6 +42,13 @@ public slots:
 
 private:
     I3COculusEngine *m_I3COculusEngine;
+
+    QHBoxLayout *m_HorizontalLayout;
+    QLabel *m_LabelRight;
+    QLabel *m_LabelLeft;
+
+    int m_iEyeWidth;
+    int m_iEyeHeight;
 
 };
 
