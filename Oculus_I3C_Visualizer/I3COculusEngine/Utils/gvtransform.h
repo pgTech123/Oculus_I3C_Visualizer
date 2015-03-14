@@ -37,6 +37,11 @@ private:
     double m_dAngleY;
     double m_dAngleZ;
 
+    /* Translation */
+    double m_dX;
+    double m_dY;
+    double m_dZ;
+
     /* Unrotated Corners */
     int m_iUnrotatedCornerX[8];
     int m_iUnrotatedCornerY[8];

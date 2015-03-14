@@ -14,7 +14,9 @@ void Transform::setAngles(double dAngleX, double dAngleY, double dAngleZ)
 
 void Transform::setTranslation(double x ,double y, double z)
 {
-    //TODO
+    m_dX = x;
+    m_dY = y;
+    m_dZ = z;
 }
 
 void Transform::setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY, int iSideLenght)
@@ -73,18 +75,21 @@ void Transform::computeTransform(double *dScreenTransformedCornerX,
     for(int i = 0; i < 8; i++)
     {
         dScreenTransformedCornerX[i] = m_dRotationMatrix[0][0]*m_iUnrotatedCornerX[i] +
-                                   m_dRotationMatrix[0][1]*m_iUnrotatedCornerY[i] +
-                                   m_dRotationMatrix[0][2]*m_iUnrotatedCornerZ[i] + m_iCenterPointX;
+                                       m_dRotationMatrix[0][1]*m_iUnrotatedCornerY[i] +
+                                       m_dRotationMatrix[0][2]*m_iUnrotatedCornerZ[i] +
+                                       m_iCenterPointX +
+                                       m_dX;
 
         dScreenTransformedCornerY[i] = m_dRotationMatrix[1][0]*m_iUnrotatedCornerX[i] +
-                                   m_dRotationMatrix[1][1]*m_iUnrotatedCornerY[i] +
-                                   m_dRotationMatrix[1][2]*m_iUnrotatedCornerZ[i] + m_iCenterPointY;
+                                       m_dRotationMatrix[1][1]*m_iUnrotatedCornerY[i] +
+                                       m_dRotationMatrix[1][2]*m_iUnrotatedCornerZ[i] +
+                                       m_iCenterPointY +
+                                       m_dY;
 
         dTransformedCornerZ[i] = m_dRotationMatrix[2][0]*m_iUnrotatedCornerX[i] +
-                                   m_dRotationMatrix[2][1]*m_iUnrotatedCornerY[i] +
-                                   m_dRotationMatrix[2][2]*m_iUnrotatedCornerZ[i];
-
-        //TODO: APPLY TRANSLATION HERE
+                                 m_dRotationMatrix[2][1]*m_iUnrotatedCornerY[i] +
+                                 m_dRotationMatrix[2][2]*m_iUnrotatedCornerZ[i] +
+                                 m_dZ;
     }
     /*for(int i = 0; i < 8; i++){
         cout << "Rotated Corner " << i << " X : " << dScreenTransformedCornerX[i] << endl;

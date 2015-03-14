@@ -59,6 +59,7 @@ void RenderingWidget::setScreenResolution(int width, int height)
 
 void RenderingWidget::setFilename(const char* filename)
 {
+    //We do not open file here as not in the same thread...
     m_filename = filename;
 }
 
@@ -81,7 +82,7 @@ void RenderingWidget::setRotation(double yaw, double pitch, double roll)
     /*cout << "yaw: "   << yaw << endl;
     cout << "pitch: " << pitch << endl;
     cout << "roll: "  << roll  << endl;*/
-    m_I3COculusEngine->setRotation(yaw, pitch, roll);
+    m_I3COculusEngine->setRotation(-pitch, yaw, roll);
 }
 
 
@@ -106,8 +107,9 @@ void RenderingWidget::renderLeftEye()
     m_I3COculusEngine->generateImage();
 
     unsigned char *imageData = m_I3COculusEngine->getData();
-    QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888); // 2 pixels width, 2 pixels height, 6 bytes per line, RGB888 format
-    //QImage scaled = img.scaled(m_iWidgetWidth, m_iWidgetHeight,Qt::KeepAspectRatio); // Scale image to show results better
+
+    // 2 pixels width, 2 pixels height, 6 bytes per line, RGB888 format
+    QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888);
     QPixmap pix = QPixmap::fromImage(img); // Create pixmap from image
 
     // Set the this Class as the Pixel Map of the Rendered Image
@@ -119,8 +121,9 @@ void RenderingWidget::renderRightEye()
     m_I3COculusEngine->generateImage();
 
     unsigned char *imageData = m_I3COculusEngine->getData();
-    QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888); // 2 pixels width, 2 pixels height, 6 bytes per line, RGB888 format
-    //QImage scaled = img.scaled(m_iWidgetWidth, m_iWidgetHeight,Qt::KeepAspectRatio); // Scale image to show results better
+
+    // 2 pixels width, 2 pixels height, 6 bytes per line, RGB888 format
+    QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888);
     QPixmap pix = QPixmap::fromImage(img); // Create pixmap from image
 
     // Set the this Class as the Pixel Map of the Rendered Image
