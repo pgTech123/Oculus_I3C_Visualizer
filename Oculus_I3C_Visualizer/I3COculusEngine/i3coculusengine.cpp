@@ -43,9 +43,9 @@ bool I3COculusEngine::setImageSize(int width, int height)
     if(m_pucData == NULL && m_pbPixelsFilled == NULL){
         m_width = width;
         m_height = height;
-        int imageDataSize = width * height * 3;
+        int imageDataSize = m_width * m_height * 3;
         m_pucData = new unsigned char[imageDataSize];
-        m_pbPixelsFilled = new bool[imageDataSize];
+        m_pbPixelsFilled = new bool[m_width * m_height];
         return true;
     }
     return false;
@@ -67,17 +67,23 @@ void I3COculusEngine::generateImage()
     //Initialize every pixels as empty
     for(int i = 0; i < width_x_height; i++)
     {
-        m_p_bPixelFilled[i] = false;
+        m_pbPixelsFilled[i] = false;
     }
 
     //Compute cube corners projected on the frame
     m_Transform.computeTransform(m_dScreenTransformedCornerX,
-                               m_dScreenTransformedCornerY,
-                               m_dDstFromScreenTransformed);
-
+                                 m_dScreenTransformedCornerY,
+                                 m_dDstFromScreenTransformed);
 
     //Sort points on Z axis by distance
     sort(m_dDstFromScreenTransformed, m_dCornerSortedByDst);
+
+    /*for(int i = 0; i < 8; i++){
+        cout << "Rotated Corner " << i << " X : " << m_dScreenTransformedCornerX[i] << endl;
+        cout << "Rotated Corner " << i << " Y : " << m_dScreenTransformedCornerY[i] << endl;
+        cout << "Rotated Corner " << i << " Z : " << m_dDstFromScreenTransformed[i] << endl;
+        cout << "Corner Order: " << i << " : " << (int)m_dCornerSortedByDst[i] << endl;
+    }*/
 
     //Rendering
     ApplyRotation_and_Render(m_dScreenTransformedCornerX,
@@ -89,11 +95,11 @@ void I3COculusEngine::generateImage()
     //Fill every pixels left empty with black
     for(int i = 0; i < width_x_height; i++)
     {
-        if(m_p_bPixelFilled[i] == false)
+        if(m_pbPixelsFilled[i] == false)
         {
-            m_p_ucImageData[3*i] = 0;
-            m_p_ucImageData[(3*i) + 1] = 0;
-            m_p_ucImageData[(3*i) + 2] = 0;
+            m_pucData[3*i] = 0;
+            m_pucData[(3*i) + 1] = 0;
+            m_pucData[(3*i) + 2] = 0;
         }
     }
 
@@ -108,7 +114,7 @@ unsigned char* I3COculusEngine::getData()
 int I3COculusEngine::readImageFile(fstream *file)
 {
     //Delete previous image data
-    clearImageInMemory();
+    //clearImageInMemory();
 
     int iError;
 
@@ -119,7 +125,7 @@ int I3COculusEngine::readImageFile(fstream *file)
     if(iError != NO_ERRORS){
         return iError;
     }
-    //cout << "Side Lenght: " << m_iSideLenght << endl;     // Debug
+    //cout << "Side Lenght: " << m_iSideLength << endl;     // Debug
 
     //Preparing to Read Image
     setImageCenterPoint();
@@ -177,7 +183,7 @@ void I3COculusEngine::readNumOfMaps(fstream *file)
         m_iArrCubeAtLevel[i] = iBuffer;
         m_iTotalNumberOfCubes += iBuffer;
     }
-    //cout << "Number of Cubes: " << m_iNumberOfCubes << endl;  //Debug
+    //cout << "Number of Cubes: " << m_iTotalNumberOfCubes << endl;  //Debug
 
     //One of the cube is 'this' so we remove 1
     m_iTotalNumberOfCubes--;
@@ -272,6 +278,7 @@ int I3COculusEngine::readIndexCubes(fstream *file)
                 this->addReferenceCube(ucMap, &m_pGVImageArray[iAddressCubesCursorOffset]);
             }
             else{
+
                 m_pGVImageArray[iCubeBeingWritten] = new GVIndexCube(&m_width,
                                                                      &m_height,
                                                                      &*m_pucData,

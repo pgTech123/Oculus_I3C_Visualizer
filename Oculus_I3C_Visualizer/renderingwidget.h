@@ -7,6 +7,7 @@
 #include <QRect>
 #include <QLabel>
 #include <QHBoxLayout>
+#include <QImage>
 #include <QPixmap>
 
 #include "I3COculusEngine/i3coculusengine.h"
@@ -26,7 +27,10 @@ public:
     virtual ~RenderingWidget();
 
     void setScreenResolution(int width, int height);
-    bool openFile(const char* filename);
+    void setFilename(const char* filename);
+
+    bool launchOculusEngine();
+    void destroyOculusEngine();
 
     void setRotation(double yaw, double pitch, double roll);
 
@@ -49,6 +53,8 @@ private:
 
     int m_iEyeWidth;
     int m_iEyeHeight;
+
+    const char *m_filename;
 
 };
 

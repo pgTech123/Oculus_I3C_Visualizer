@@ -21,6 +21,8 @@ void Transform::setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY,
 {
     m_iCenterPointX = iCenterPointX;
     m_iCenterPointY = iCenterPointY;
+    cout << "Center Point X : " << iCenterPointX << endl;
+    cout << "Center Point Y : " << iCenterPointY << endl;
 
     m_iUnrotatedCornerX[0] = -iSideLenght/2;
     m_iUnrotatedCornerY[0] = iSideLenght/2;
@@ -53,6 +55,12 @@ void Transform::setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY,
     m_iUnrotatedCornerX[7] = -iSideLenght/2;
     m_iUnrotatedCornerY[7] = -iSideLenght/2;
     m_iUnrotatedCornerZ[7] = -1*(iSideLenght/2);
+
+    /*for(int i = 0; i < 8; i++){
+        cout << "Unrotated Corner " << i << " X : " << m_iUnrotatedCornerX[i] << endl;
+        cout << "Unrotated Corner " << i << " Y : " << m_iUnrotatedCornerY[i] << endl;
+        cout << "Unrotated Corner " << i << " Z : " << m_iUnrotatedCornerZ[i] << endl;
+    }//*/
 }
 
 void Transform::computeTransform(double *dScreenTransformedCornerX,
@@ -78,6 +86,11 @@ void Transform::computeTransform(double *dScreenTransformedCornerX,
 
         //TODO: APPLY TRANSLATION HERE
     }
+    /*for(int i = 0; i < 8; i++){
+        cout << "Rotated Corner " << i << " X : " << dScreenTransformedCornerX[i] << endl;
+        cout << "Rotated Corner " << i << " Y : " << dScreenTransformedCornerY[i] << endl;
+        cout << "Rotated Corner " << i << " Z : " << dTransformedCornerZ[i] << endl;
+    }//   DEBUG */
 }
 
 void Transform::generateRotationMatrix()

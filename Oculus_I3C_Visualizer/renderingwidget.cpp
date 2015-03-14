@@ -5,7 +5,6 @@ RenderingWidget::RenderingWidget(QWidget *parent) :
 {
     //Must be done here cause and in destructor cause other calls are not in the
     //same thread
-    m_I3COculusEngine = new I3COculusEngine();
     m_LabelRight = new QLabel();
     m_LabelLeft = new QLabel();
     m_HorizontalLayout = new QHBoxLayout();
@@ -14,7 +13,6 @@ RenderingWidget::RenderingWidget(QWidget *parent) :
 
 RenderingWidget::~RenderingWidget()
 {
-    delete m_I3COculusEngine;
     delete m_LabelLeft;
     delete m_LabelRight;
     delete m_HorizontalLayout;
@@ -54,49 +52,78 @@ void RenderingWidget::setScreenResolution(int width, int height)
 
     this->showFullScreen();
 
+    //Find a more appropriate place for this statement
+    m_I3COculusEngine->openI3CFile(m_filename);
+
 }
 
-bool RenderingWidget::openFile(const char* filename)
+void RenderingWidget::setFilename(const char* filename)
 {
-    cout << "Filename: " << filename << endl;
-    m_I3COculusEngine->openI3CFile(filename);
+    m_filename = filename;
+}
+
+bool RenderingWidget::launchOculusEngine()
+{
+    m_I3COculusEngine = new I3COculusEngine();
+    //TODO: Make this function safe
     return true;
+}
+
+void RenderingWidget::destroyOculusEngine()
+{
+    //TODO: make this function safe
+    delete m_I3COculusEngine;
 }
 
 void RenderingWidget::setRotation(double yaw, double pitch, double roll)
 {
     //DEBUG
-    cout << "yaw: "   << yaw << endl;
+    /*cout << "yaw: "   << yaw << endl;
     cout << "pitch: " << pitch << endl;
-    cout << "roll: "  << roll  << endl;
+    cout << "roll: "  << roll  << endl;*/
     m_I3COculusEngine->setRotation(yaw, pitch, roll);
 }
 
 
 void RenderingWidget::setLeftEyePosition(double x, double y, double z)
 {
-    cout << "LX: " << x << endl;
+    /*cout << "LX: " << x << endl;
     cout << "LY: " << y << endl;
-    cout << "LZ: " << z << endl;
-    //TODO
+    cout << "LZ: " << z << endl;*/
+    m_I3COculusEngine->setPosition(x, y, z);
 }
 
 void RenderingWidget::setRightEyePosition(double x, double y, double z)
 {
-    cout << "RX: " << x << endl;
+    /*cout << "RX: " << x << endl;
     cout << "RY: " << y << endl;
-    cout << "RZ: " << z << endl;
-    //TODO
+    cout << "RZ: " << z << endl;*/
+    m_I3COculusEngine->setPosition(x, y, z);
 }
 
 void RenderingWidget::renderLeftEye()
 {
-    //m_I3COculusEngine->generateImage();
-    //TODO: get data
+    m_I3COculusEngine->generateImage();
+
+    unsigned char *imageData = m_I3COculusEngine->getData();
+    QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888); // 2 pixels width, 2 pixels height, 6 bytes per line, RGB888 format
+    //QImage scaled = img.scaled(m_iWidgetWidth, m_iWidgetHeight,Qt::KeepAspectRatio); // Scale image to show results better
+    QPixmap pix = QPixmap::fromImage(img); // Create pixmap from image
+
+    // Set the this Class as the Pixel Map of the Rendered Image
+    m_LabelRight->setPixmap(pix);
 }
 
 void RenderingWidget::renderRightEye()
 {
+    m_I3COculusEngine->generateImage();
 
+    unsigned char *imageData = m_I3COculusEngine->getData();
+    QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888); // 2 pixels width, 2 pixels height, 6 bytes per line, RGB888 format
+    //QImage scaled = img.scaled(m_iWidgetWidth, m_iWidgetHeight,Qt::KeepAspectRatio); // Scale image to show results better
+    QPixmap pix = QPixmap::fromImage(img); // Create pixmap from image
+
+    // Set the this Class as the Pixel Map of the Rendered Image
+    m_LabelLeft->setPixmap(pix);
 }
 

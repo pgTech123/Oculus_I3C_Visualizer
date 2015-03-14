@@ -37,7 +37,7 @@ void Oculus::render(const char* filename)
     {
         //Creation of the rendering window
         m_RenderingWidget = new RenderingWidget();
-        m_RenderingWidget->openFile(filename);
+        m_RenderingWidget->setFilename(filename);
 
         data.hmd = &m_hmd;
         data.p_renderingWidget = m_RenderingWidget;
@@ -67,6 +67,7 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
     ThreadData *data = (ThreadData*)lpParameter;
     ovrHmd hmd = *(ovrHmd*)data->hmd;
     RenderingWidget *renderingWidget = (RenderingWidget*)data->p_renderingWidget;
+    renderingWidget->launchOculusEngine();
     ovrSizei resolution = hmd->Resolution;
     renderingWidget->setScreenResolution(resolution.w, resolution.h);
 
@@ -88,6 +89,9 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
             ovrHmd_EndFrameTiming(hmd);
         }
     }
+
+
+    renderingWidget->destroyOculusEngine();
     // DEBUG
     cout << "out" << endl;
 
