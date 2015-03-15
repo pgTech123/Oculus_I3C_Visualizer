@@ -27,5 +27,5 @@ void MainWindow::closeEvent(QCloseEvent*)
 
 void MainWindow::on_pushButtonGo_clicked()
 {
-    m_Oculus->render("./Cube_16.i3c");
+    m_Oculus->render("./test.i3c");
 }

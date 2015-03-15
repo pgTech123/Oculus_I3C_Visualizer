@@ -65,6 +65,20 @@ void Transform::setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY,
     }//*/
 }
 
+void Transform::setFOV(float down, float up, float right, float left)
+{
+    m_fFOVDown = down;
+    m_fFOVUp = up;
+    if(right < left){
+        m_fFOVIn = right;
+        m_fFOVOut = left;
+    }
+    else{
+        m_fFOVIn = left;
+        m_fFOVOut = right;
+    }
+}
+
 void Transform::computeTransform(double *dScreenTransformedCornerX,
                                  double *dScreenTransformedCornerY,
                                  double *dTransformedCornerZ)
@@ -74,28 +88,34 @@ void Transform::computeTransform(double *dScreenTransformedCornerX,
     /* Compute Rotated Points */
     for(int i = 0; i < 8; i++)
     {
-        dScreenTransformedCornerX[i] = m_dRotationMatrix[0][0]*m_iUnrotatedCornerX[i] +
-                                       m_dRotationMatrix[0][1]*m_iUnrotatedCornerY[i] +
-                                       m_dRotationMatrix[0][2]*m_iUnrotatedCornerZ[i] +
-                                       m_iCenterPointX +
-                                       m_dX;
+        dScreenTransformedCornerX[i] = m_dRotationMatrix[0][0]*(m_iUnrotatedCornerX[i] + m_dX) +
+                                       m_dRotationMatrix[0][1]*(m_iUnrotatedCornerY[i] + m_dY) +
+                                       m_dRotationMatrix[0][2]*(m_iUnrotatedCornerZ[i] + m_dZ) +
+                                       m_iCenterPointX;
 
-        dScreenTransformedCornerY[i] = m_dRotationMatrix[1][0]*m_iUnrotatedCornerX[i] +
-                                       m_dRotationMatrix[1][1]*m_iUnrotatedCornerY[i] +
-                                       m_dRotationMatrix[1][2]*m_iUnrotatedCornerZ[i] +
-                                       m_iCenterPointY +
-                                       m_dY;
+        dScreenTransformedCornerY[i] = m_dRotationMatrix[1][0]*(m_iUnrotatedCornerX[i] + m_dX) +
+                                       m_dRotationMatrix[1][1]*(m_iUnrotatedCornerY[i] + m_dY) +
+                                       m_dRotationMatrix[1][2]*(m_iUnrotatedCornerZ[i] + m_dZ) +
+                                       m_iCenterPointY;
 
-        dTransformedCornerZ[i] = m_dRotationMatrix[2][0]*m_iUnrotatedCornerX[i] +
-                                 m_dRotationMatrix[2][1]*m_iUnrotatedCornerY[i] +
-                                 m_dRotationMatrix[2][2]*m_iUnrotatedCornerZ[i] +
-                                 m_dZ;
+        dTransformedCornerZ[i] = m_dRotationMatrix[2][0]*(m_iUnrotatedCornerX[i] + m_dX) +
+                                 m_dRotationMatrix[2][1]*(m_iUnrotatedCornerY[i] + m_dY) +
+                                 m_dRotationMatrix[2][2]*(m_iUnrotatedCornerZ[i] + m_dZ);
     }
     /*for(int i = 0; i < 8; i++){
         cout << "Rotated Corner " << i << " X : " << dScreenTransformedCornerX[i] << endl;
         cout << "Rotated Corner " << i << " Y : " << dScreenTransformedCornerY[i] << endl;
         cout << "Rotated Corner " << i << " Z : " << dTransformedCornerZ[i] << endl;
     }//   DEBUG */
+}
+
+void Transform::getImageCenterPoint(int* centerPointX, int* centerPointY)
+{
+
+    cout << m_fFOVDown << endl;
+    cout << m_fFOVUp << endl;
+    cout << m_fFOVIn << endl;
+    cout << m_fFOVOut << endl;
 }
 
 void Transform::generateRotationMatrix()

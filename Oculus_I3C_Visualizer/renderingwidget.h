@@ -28,6 +28,7 @@ public:
 
     void setScreenResolution(int width, int height);
     void setFilename(const char* filename);
+    void setFOV(float down, float up, float right, float left);
 
     bool launchOculusEngine();
     void destroyOculusEngine();

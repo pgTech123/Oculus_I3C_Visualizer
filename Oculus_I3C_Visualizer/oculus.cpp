@@ -70,6 +70,9 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
     renderingWidget->launchOculusEngine();
     ovrSizei resolution = hmd->Resolution;
     renderingWidget->setScreenResolution(resolution.w, resolution.h);
+    //Set the same FOV for each eye:
+    ovrFovPort FOV = hmd->DefaultEyeFov[0];
+    renderingWidget->setFOV(FOV.DownTan, FOV.UpTan, FOV.RightTan, FOV.LeftTan);
 
     // Oculus usefull variable
     ovrFrameTiming frameTiming;

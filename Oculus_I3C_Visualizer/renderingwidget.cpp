@@ -63,6 +63,11 @@ void RenderingWidget::setFilename(const char* filename)
     m_filename = filename;
 }
 
+void RenderingWidget::setFOV(float down, float up, float right, float left)
+{
+    m_I3COculusEngine->setFOV(down, up, right, left);
+}
+
 bool RenderingWidget::launchOculusEngine()
 {
     m_I3COculusEngine = new I3COculusEngine();
@@ -90,8 +95,8 @@ void RenderingWidget::setLeftEyePosition(double x, double y, double z)
 {
     /*cout << "LX: " << x << endl;
     cout << "LY: " << y << endl;
-    cout << "LZ: " << z << endl;*/
-    m_I3COculusEngine->setPosition(x, y, z);
+    cout << "LZ: " << z << endl;//*/
+    m_I3COculusEngine->setPosition(-x*1000, y*1000, z*1000);
 }
 
 void RenderingWidget::setRightEyePosition(double x, double y, double z)
@@ -99,7 +104,7 @@ void RenderingWidget::setRightEyePosition(double x, double y, double z)
     /*cout << "RX: " << x << endl;
     cout << "RY: " << y << endl;
     cout << "RZ: " << z << endl;*/
-    m_I3COculusEngine->setPosition(x, y, z);
+    m_I3COculusEngine->setPosition(-x*1000, y*1000, z*1000);
 }
 
 void RenderingWidget::renderLeftEye()

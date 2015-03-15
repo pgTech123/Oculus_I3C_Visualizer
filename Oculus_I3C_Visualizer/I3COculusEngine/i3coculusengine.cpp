@@ -51,6 +51,11 @@ bool I3COculusEngine::setImageSize(int width, int height)
     return false;
 }
 
+void I3COculusEngine::setFOV(float down, float up, float right, float left)
+{
+    m_Transform.setFOV(down, up, right, left);
+}
+
 void I3COculusEngine::setRotation(double yaw, double pitch, double roll)
 {
     m_Transform.setAngles(yaw, pitch, roll);
@@ -86,6 +91,7 @@ void I3COculusEngine::generateImage()
     }*/
 
     //Rendering
+    m_Transform.getImageCenterPoint(&m_iCenterPointX, &m_iCenterPointY);
     ApplyRotation_and_Render(m_dScreenTransformedCornerX,
                              m_dScreenTransformedCornerY,
                              m_dCornerSortedByDst,
@@ -338,5 +344,4 @@ void I3COculusEngine::clearImageInMemory()
         m_iArrCubeAtLevel = NULL;
     }
 }
-
 
