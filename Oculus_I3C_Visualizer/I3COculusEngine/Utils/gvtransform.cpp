@@ -111,11 +111,18 @@ void Transform::computeTransform(double *dScreenTransformedCornerX,
 
 void Transform::getImageCenterPoint(int* centerPointX, int* centerPointY)
 {
+    float x = m_dRotationMatrix[0][0]*(m_dX) +
+            m_dRotationMatrix[0][1]*( m_dY) +
+            m_dRotationMatrix[0][2]*( m_dZ) +
+            m_iCenterPointX;
 
-    cout << m_fFOVDown << endl;
-    cout << m_fFOVUp << endl;
-    cout << m_fFOVIn << endl;
-    cout << m_fFOVOut << endl;
+    float y = m_dRotationMatrix[1][0]*( m_dX) +
+            m_dRotationMatrix[1][1]*(m_dY) +
+            m_dRotationMatrix[1][2]*(m_dZ) +
+            m_iCenterPointY;
+
+    (*centerPointX) = (int)x;
+    (*centerPointY) = (int)y;
 }
 
 void Transform::generateRotationMatrix()

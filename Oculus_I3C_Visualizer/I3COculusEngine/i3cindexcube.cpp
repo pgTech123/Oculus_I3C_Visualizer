@@ -446,6 +446,7 @@ void GVIndexCube::renderPixel(double iArrPosXRotation[8],
         /* If pixel exist */
         if((m_ucMap & (0x01 << ucSortedByDstFromScreen[i])))
         {
+            //TODO: Condition if not in the image
             if(iArrPosXRotation[ucSortedByDstFromScreen[i]] < iCenterPointXRounded)
             {
 
