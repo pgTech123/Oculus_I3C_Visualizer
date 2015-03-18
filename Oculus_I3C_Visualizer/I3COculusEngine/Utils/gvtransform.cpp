@@ -3,16 +3,17 @@
 Transform::Transform()
 {
     setAngles(0,0);
+    setTranslation(0,0,0);
 }
 
-void Transform::setAngles(double dAngleX, double dAngleY, double dAngleZ)
+void Transform::setAngles(float dAngleX, float dAngleY, float dAngleZ)
 {
     m_dAngleX = dAngleX;
     m_dAngleY = dAngleY;
     m_dAngleZ = dAngleZ;
 }
 
-void Transform::setTranslation(double x ,double y, double z)
+void Transform::setTranslation(float x ,float y, float z)
 {
     m_dX = x;
     m_dY = y;
@@ -79,9 +80,9 @@ void Transform::setFOV(float down, float up, float right, float left)
     }
 }
 
-void Transform::computeTransform(double *dScreenTransformedCornerX,
-                                 double *dScreenTransformedCornerY,
-                                 double *dTransformedCornerZ)
+void Transform::computeTransform(float *dScreenTransformedCornerX,
+                                 float *dScreenTransformedCornerY,
+                                 float *dTransformedCornerZ)
 {
     generateRotationMatrix();
 
@@ -90,17 +91,18 @@ void Transform::computeTransform(double *dScreenTransformedCornerX,
     {
         dScreenTransformedCornerX[i] = m_dRotationMatrix[0][0]*(m_iUnrotatedCornerX[i] + m_dX) +
                                        m_dRotationMatrix[0][1]*(m_iUnrotatedCornerY[i] + m_dY) +
-                                       m_dRotationMatrix[0][2]*(m_iUnrotatedCornerZ[i] + m_dZ) +
-                                       m_iCenterPointX;
+                                       m_dRotationMatrix[0][2]*(m_iUnrotatedCornerZ[i] + m_dZ +
+                                                                DST_OCULUS_ORIGIN);
 
         dScreenTransformedCornerY[i] = m_dRotationMatrix[1][0]*(m_iUnrotatedCornerX[i] + m_dX) +
                                        m_dRotationMatrix[1][1]*(m_iUnrotatedCornerY[i] + m_dY) +
-                                       m_dRotationMatrix[1][2]*(m_iUnrotatedCornerZ[i] + m_dZ) +
-                                       m_iCenterPointY;
+                                       m_dRotationMatrix[1][2]*(m_iUnrotatedCornerZ[i] + m_dZ +
+                                                                DST_OCULUS_ORIGIN);
 
         dTransformedCornerZ[i] = m_dRotationMatrix[2][0]*(m_iUnrotatedCornerX[i] + m_dX) +
                                  m_dRotationMatrix[2][1]*(m_iUnrotatedCornerY[i] + m_dY) +
-                                 m_dRotationMatrix[2][2]*(m_iUnrotatedCornerZ[i] + m_dZ);
+                                 m_dRotationMatrix[2][2]*(m_iUnrotatedCornerZ[i] + m_dZ +
+                                                          DST_OCULUS_ORIGIN);
     }
     /*for(int i = 0; i < 8; i++){
         cout << "Rotated Corner " << i << " X : " << dScreenTransformedCornerX[i] << endl;
@@ -128,15 +130,15 @@ void Transform::getImageCenterPoint(int* centerPointX, int* centerPointY)
 void Transform::generateRotationMatrix()
 {
     /* Precomputation */
-    double cosAngleX = cos(m_dAngleX);
-    double sinAngleX = sin(m_dAngleX);
-    double cosAngleY = cos(m_dAngleY);
-    double sinAngleY = sin(m_dAngleY);
-    double cosAngleZ = cos(m_dAngleZ);
-    double sinAngleZ = sin(m_dAngleZ);
+    float cosAngleX = cos(m_dAngleX);
+    float sinAngleX = sin(m_dAngleX);
+    float cosAngleY = cos(m_dAngleY);
+    float sinAngleY = sin(m_dAngleY);
+    float cosAngleZ = cos(m_dAngleZ);
+    float sinAngleZ = sin(m_dAngleZ);
 
-    double cosXSinY = cosAngleX * sinAngleY;
-    double sinXSinY = sinAngleX * sinAngleY;
+    float cosXSinY = cosAngleX * sinAngleY;
+    float sinXSinY = sinAngleX * sinAngleY;
 
     /* Matrix Assignation */
     m_dRotationMatrix[0][0] = cosAngleY * cosAngleZ;

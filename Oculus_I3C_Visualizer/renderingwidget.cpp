@@ -96,7 +96,7 @@ void RenderingWidget::setLeftEyePosition(double x, double y, double z)
     /*cout << "LX: " << x << endl;
     cout << "LY: " << y << endl;
     cout << "LZ: " << z << endl;//*/
-    m_I3COculusEngine->setPosition(-x*1000, y*1000, z*1000+500);
+    m_I3COculusEngine->setPosition(-x*1000, y*1000, z*1000);
 }
 
 void RenderingWidget::setRightEyePosition(double x, double y, double z)
@@ -104,7 +104,7 @@ void RenderingWidget::setRightEyePosition(double x, double y, double z)
     /*cout << "RX: " << x << endl;
     cout << "RY: " << y << endl;
     cout << "RZ: " << z << endl;*/
-    m_I3COculusEngine->setPosition(-x*1000, y*1000, z*1000+500);
+    m_I3COculusEngine->setPosition(-x*1000, y*1000, z*1000);
 }
 
 void RenderingWidget::renderLeftEye()

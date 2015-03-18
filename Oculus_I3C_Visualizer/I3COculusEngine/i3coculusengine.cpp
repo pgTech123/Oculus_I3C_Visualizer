@@ -83,20 +83,24 @@ void I3COculusEngine::generateImage()
     //Sort points on Z axis by distance
     sort(m_dDstFromScreenTransformed, m_dCornerSortedByDst);
 
-    /*for(int i = 0; i < 8; i++){
+    for(int i = 0; i < 8; i++){
         cout << "Rotated Corner " << i << " X : " << m_dScreenTransformedCornerX[i] << endl;
         cout << "Rotated Corner " << i << " Y : " << m_dScreenTransformedCornerY[i] << endl;
         cout << "Rotated Corner " << i << " Z : " << m_dDstFromScreenTransformed[i] << endl;
         cout << "Corner Order: " << i << " : " << (int)m_dCornerSortedByDst[i] << endl;
-    }*/
+    }//*/
 
     //Rendering
-    m_Transform.getImageCenterPoint(&m_iCenterPointX, &m_iCenterPointY);
-    ApplyRotation_and_Render(m_dScreenTransformedCornerX,
+    //m_Transform.getImageCenterPoint(&m_iCenterPointX, &m_iCenterPointY);
+    /*ApplyRotation_and_Render(m_dScreenTransformedCornerX,
                              m_dScreenTransformedCornerY,
                              m_dCornerSortedByDst,
-                             (double)m_iCenterPointX,
-                             (double)m_iCenterPointY);
+                             (float)m_iCenterPointX,
+                             (float)m_iCenterPointY);*/
+    render(m_dScreenTransformedCornerX,
+           m_dScreenTransformedCornerY,
+           m_dDstFromScreenTransformed,
+           m_dCornerSortedByDst);
 
     //Fill every pixels left empty with black
     for(int i = 0; i < width_x_height; i++)
@@ -135,6 +139,7 @@ int I3COculusEngine::readImageFile(fstream *file)
 
     //Preparing to Read Image
     setImageCenterPoint();
+    //TODO: Consider pixel density: now 1px = 1mm
     m_Transform.setUnrotatedCornersCorners(m_iCenterPointX, m_iCenterPointY, m_iSideLength);
     setNumberOfLevels();
 
@@ -195,7 +200,7 @@ void I3COculusEngine::readNumOfMaps(fstream *file)
     m_iTotalNumberOfCubes--;
 
     //Create Cube Pointer Array
-    m_pGVImageArray = new GVIndexCube*[m_iTotalNumberOfCubes];
+    m_pGVImageArray = new I3CCube*[m_iTotalNumberOfCubes];
 }
 
 int I3COculusEngine::readCubes(fstream *file)
@@ -226,7 +231,7 @@ int I3COculusEngine::readPixelCubes(fstream *file)
     for(int i = 0; i < m_iArrCubeAtLevel[0]; i++)
     {
         /* Create Cube */
-        m_pGVImageArray[iCubeBeingWritten] = new GVIndexCube(&m_width,
+        m_pGVImageArray[iCubeBeingWritten] = new I3CCube(&m_width,
                                                              &m_height,
                                                              &*m_pucData,
                                                              &*m_pbPixelsFilled);
@@ -281,17 +286,17 @@ int I3COculusEngine::readIndexCubes(fstream *file)
             /* Set cube with child addresses */
             if(m_iNumberOfLevels == level+1){
                 //cout << "Master Cube" << endl;
-                this->addReferenceCube(ucMap, &m_pGVImageArray[iAddressCubesCursorOffset]);
+                this->addReferenceCube(ucMap, (GVIndexCube**)&m_pGVImageArray[iAddressCubesCursorOffset]);
             }
             else{
 
-                m_pGVImageArray[iCubeBeingWritten] = new GVIndexCube(&m_width,
+                m_pGVImageArray[iCubeBeingWritten] = new I3CCube(&m_width,
                                                                      &m_height,
                                                                      &*m_pucData,
                                                                      &*m_pbPixelsFilled);
 
                 m_pGVImageArray[iCubeBeingWritten]->addReferenceCube(ucMap,
-                                                                     &m_pGVImageArray[iAddressCubesCursorOffset]);
+                                                                     (GVIndexCube**)&m_pGVImageArray[iAddressCubesCursorOffset]);
             }
 
             /* Update Offset */

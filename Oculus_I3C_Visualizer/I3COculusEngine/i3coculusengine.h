@@ -12,7 +12,7 @@
 #define I3COCULUSENGINE_H
 
 #include <fstream>
-#include "i3cindexcube.h"
+#include "i3ccube.h"
 #include "Utils/gvtransform.h"
 
 
@@ -41,7 +41,13 @@
  * **********************************************************************/
 
 
-class I3COculusEngine: public GVIndexCube
+/* ********************
+ * TODO:
+ * -Add pixel density
+ *
+ * ********************/
+
+class I3COculusEngine: public I3CCube
 {
 public:
     I3COculusEngine();
@@ -77,7 +83,7 @@ private:
     int m_iNumberOfLevels;
     int* m_iArrCubeAtLevel;
     int m_iTotalNumberOfCubes;
-    GVIndexCube** m_pGVImageArray;
+    I3CCube** m_pGVImageArray;
 
     int m_width;
     int m_height;
@@ -88,9 +94,9 @@ private:
     int m_iCenterPointY;
     Transform m_Transform;
 
-    double m_dScreenTransformedCornerX[8];
-    double m_dScreenTransformedCornerY[8];
-    double m_dDstFromScreenTransformed[8];
+    float m_dScreenTransformedCornerX[8];
+    float m_dScreenTransformedCornerY[8];
+    float m_dDstFromScreenTransformed[8];
     unsigned char m_dCornerSortedByDst[8];
 };
 

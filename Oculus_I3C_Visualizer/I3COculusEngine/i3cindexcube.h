@@ -48,41 +48,41 @@ public:
     void addReferenceCube(unsigned char ucMap, GVIndexCube** p_ChildCubeRef);
 
     /* Transform and render */
-    void ApplyRotation_and_Render(double iArrPosXRotation[8],
-                                    double iArrPosYRotation[8],
+    void ApplyRotation_and_Render(float iArrPosXRotation[8],
+                                    float iArrPosYRotation[8],
                                     unsigned char ucSortedByDstFromScreen[8],
-                                    double dCenterPointX,
-                                    double dCenterPointY);
+                                    float dCenterPointX,
+                                    float dCenterPointY);
 
 private:
     void initializeCube();
-    void renderReference(double iArrPosXRotation[8],
-                        double iArrPosYRotation[8],
+    void renderReference(float iArrPosXRotation[8],
+                        float iArrPosYRotation[8],
                         unsigned char ucSortedByDstFromScreen[8],
-                        double dCenterPointX,
-                        double dCenterPointY);
-    void renderPixel(double dArrPosXRotation[8],
-                        double dArrPosYRotation[8],
+                        float dCenterPointX,
+                        float dCenterPointY);
+    void renderPixel(float dArrPosXRotation[8],
+                        float dArrPosYRotation[8],
                         unsigned char ucSortedByDstFromScreen[8],
-                        double dCenterPointX,
-                        double dCenterPointY);
-    void computeMidArr(double* dArrPosXRotation,
-                       double* dArrPosYRotation,
-                       double* dMidArrX,
-                       double* dMidArrY);
-    void computeMidFace(double* dMidArrX,
-                        double* dMidArrY,
-                        double* dMidFaceXArr,
-                        double* dMidFaceYArr);
-    void computeChildCorners(double* dArrPosXRotation,
-                        double* dArrPosYRotation,
+                        float dCenterPointX,
+                        float dCenterPointY);
+    void computeMidArr(float* dArrPosXRotation,
+                       float* dArrPosYRotation,
+                       float* dMidArrX,
+                       float* dMidArrY);
+    void computeMidFace(float* dMidArrX,
+                        float* dMidArrY,
+                        float* dMidFaceXArr,
+                        float* dMidFaceYArr);
+    void computeChildCorners(float* dArrPosXRotation,
+                        float* dArrPosYRotation,
                         unsigned char ucMapIndex,
-                        double dCenterPointX,
-                        double dCenterPointY,
-                        double* dMidArrX,
-                        double* dMidArrY,
-                        double* dMidFaceXArr,
-                        double* dMidFaceYArr);
+                        float dCenterPointX,
+                        float dCenterPointY,
+                        float* dMidArrX,
+                        float* dMidArrY,
+                        float* dMidFaceXArr,
+                        float* dMidFaceYArr);
     void findCenterPoint();
     bool isChildFullyHidden();
 
@@ -110,10 +110,10 @@ private:
     GVIndexCube** m_p_GVIndexCubeArray;
 
     /* Reference cube rendering */
-    double m_dChildComputedCornersX[8];
-    double m_dChildComputedCornersY[8];
-    double m_dChildCenterPointX;
-    double m_dChildCenterPointY;
+    float m_dChildComputedCornersX[8];
+    float m_dChildComputedCornersY[8];
+    float m_dChildCenterPointX;
+    float m_dChildCenterPointY;
 };
 
 #endif // GVINDEXCUBE_H

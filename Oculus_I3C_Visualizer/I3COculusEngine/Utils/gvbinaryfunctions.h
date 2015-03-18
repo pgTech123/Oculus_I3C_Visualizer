@@ -19,6 +19,6 @@ bool isBitHigh(unsigned char iNumber, unsigned char iBit);
 
 
 
-void sort(double dUnsortedArray[8], unsigned char uc_IndexSorted[8]);
+void sort(float dUnsortedArray[8], unsigned char uc_IndexSorted[8]);
 
 #endif // GVBINARYFUNCTIONS_H

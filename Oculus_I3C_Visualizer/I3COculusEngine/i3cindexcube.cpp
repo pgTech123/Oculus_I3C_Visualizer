@@ -110,11 +110,11 @@ void GVIndexCube::addReferenceCube(unsigned char ucMap, GVIndexCube** p_ChildCub
     }
 }
 
-void GVIndexCube::ApplyRotation_and_Render( double iArrPosXRotation[8], //relative
-                                            double iArrPosYRotation[8], //relative
+void GVIndexCube::ApplyRotation_and_Render( float iArrPosXRotation[8], //relative
+                                            float iArrPosYRotation[8], //relative
                                             unsigned char ucSortedByDstFromScreen[8],
-                                            double dCenterPointX,
-                                            double dCenterPointY)
+                                            float dCenterPointX,
+                                            float dCenterPointY)
 {
     /* Render cubes accordingly to their level */
     if(m_iHierarchyLevel > 0){
@@ -133,23 +133,23 @@ void GVIndexCube::ApplyRotation_and_Render( double iArrPosXRotation[8], //relati
     }
 }
 
-void GVIndexCube::renderReference(double dArrPosXRotation[8],
-                    double dArrPosYRotation[8],
+void GVIndexCube::renderReference(float dArrPosXRotation[8],
+                    float dArrPosYRotation[8],
                     unsigned char ucSortedByDstFromScreen[8],
-                    double dCenterPointX,
-                    double dCenterPointY)
+                    float dCenterPointX,
+                    float dCenterPointY)
 {
     /* Find Array Mid Point */
-    double dMidArrX[12];
-    double dMidArrY[12];
+    float dMidArrX[12];
+    float dMidArrY[12];
     computeMidArr(dArrPosXRotation,
                   dArrPosYRotation,
                   dMidArrX,
                   dMidArrY);
 
     /* Find Face Mid Point */
-    double dMidFaceXArr[6];
-    double dMidFaceYArr[6];
+    float dMidFaceXArr[6];
+    float dMidFaceYArr[6];
     computeMidFace(dMidArrX,
                    dMidArrY,
                    dMidFaceXArr,
@@ -184,10 +184,10 @@ void GVIndexCube::renderReference(double dArrPosXRotation[8],
     }
 }
 
-void GVIndexCube::computeMidArr(double* dArrPosXRotation,
-                   double* dArrPosYRotation,
-                   double* dMidArrX,
-                   double* dMidArrY)
+void GVIndexCube::computeMidArr(float* dArrPosXRotation,
+                   float* dArrPosYRotation,
+                   float* dMidArrX,
+                   float* dMidArrY)
 {
     //TO CHANGE WHEN PERSECTIVE
     dMidArrX[0] = (dArrPosXRotation[0]+dArrPosXRotation[1])/2;
@@ -216,10 +216,10 @@ void GVIndexCube::computeMidArr(double* dArrPosXRotation,
     dMidArrY[11] = (dArrPosYRotation[7]+dArrPosYRotation[4])/2;
 }
 
-void GVIndexCube::computeMidFace(double *dMidArrX,
-                                 double *dMidArrY,
-                                 double *dMidFaceXArr,
-                                 double *dMidFaceYArr)
+void GVIndexCube::computeMidFace(float *dMidArrX,
+                                 float *dMidArrY,
+                                 float *dMidFaceXArr,
+                                 float *dMidFaceYArr)
 {
     //TO CHANGE WHEN PERSECTIVE
     dMidFaceXArr[0] = (dMidArrX[0]+dMidArrX[2])/2;
@@ -236,15 +236,15 @@ void GVIndexCube::computeMidFace(double *dMidArrX,
     dMidFaceYArr[5] = (dMidArrY[8]+dMidArrY[10])/2;
 }
 
-void GVIndexCube::computeChildCorners(double* dArrPosXRotation,
-                                      double* dArrPosYRotation,
+void GVIndexCube::computeChildCorners(float* dArrPosXRotation,
+                                      float* dArrPosYRotation,
                                       unsigned char ucMapIndex,
-                                      double dCenterPointX,
-                                      double dCenterPointY,
-                                      double* dMidArrX,
-                                      double* dMidArrY,
-                                      double* dMidFaceXArr,
-                                      double* dMidFaceYArr)
+                                      float dCenterPointX,
+                                      float dCenterPointY,
+                                      float* dMidArrX,
+                                      float* dMidArrY,
+                                      float* dMidFaceXArr,
+                                      float* dMidFaceYArr)
 {
     //ucMapIndex => 0 to 7
     if(ucMapIndex == 0){
@@ -399,8 +399,8 @@ void GVIndexCube::computeChildCorners(double* dArrPosXRotation,
 
 void GVIndexCube::findCenterPoint()
 {
-    double dMidVerticalX[2];
-    double dMidVerticalY[2];
+    float dMidVerticalX[2];
+    float dMidVerticalY[2];
     dMidVerticalX[0] = (m_dChildComputedCornersX[0]+m_dChildComputedCornersX[4])/2;
     dMidVerticalY[0] = (m_dChildComputedCornersY[0]+m_dChildComputedCornersY[4])/2;
     dMidVerticalX[1] = (m_dChildComputedCornersX[2]+m_dChildComputedCornersX[6])/2;
@@ -426,11 +426,11 @@ bool GVIndexCube::isChildFullyHidden()
     return false;
 }
 
-void GVIndexCube::renderPixel(double iArrPosXRotation[8],
-                    double iArrPosYRotation[8],
+void GVIndexCube::renderPixel(float iArrPosXRotation[8],
+                    float iArrPosYRotation[8],
                     unsigned char ucSortedByDstFromScreen[8],
-                    double dCenterPointX,
-                    double dCenterPointY)
+                    float dCenterPointX,
+                    float dCenterPointY)
 {
     /* Round center point */
     int iCenterPointXRounded = (int)(dCenterPointX);    //(int)round(dCenterPointX);

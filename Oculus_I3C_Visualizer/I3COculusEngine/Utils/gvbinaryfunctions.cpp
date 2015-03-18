@@ -71,13 +71,13 @@ bool isBitHigh(unsigned char ucNumber, unsigned char ucBit)
 
 }
 
-void sort(double dUnsortedArray[8], unsigned char uc_IndexSorted[8])
+void sort(float dUnsortedArray[8], unsigned char uc_IndexSorted[8])
 {
     //To optimize (TODO)
 
     bool bArrAlreadySorted[8];
-    double tmp = 2000000;
-    double potentialNextV = 2000000;
+    float tmp = 2000000;
+    float potentialNextV = 2000000;
     unsigned char index = 0;
     //initialize
     for(int i = 0; i < 8; i++)

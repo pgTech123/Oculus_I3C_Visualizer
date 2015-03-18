@@ -9,7 +9,7 @@ using namespace std;
 
 #define PI  3.14159265359
 
-#define DST_OCULUS_ORIGIN   500
+#define DST_OCULUS_ORIGIN   500     //mm
 
 /**************************************************************************
  * The purpose of this class is to abstract the the transformations maths.
@@ -24,13 +24,13 @@ public:
     void setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY, int iSideLenght);
     void setFOV(float down, float up, float right, float left);
 
-    void setAngles(double dAngleX, double dAngleY, double dAngleZ = 0);
-    void setTranslation(double x ,double y, double z);
+    void setAngles(float dAngleX, float dAngleY, float dAngleZ = 0);
+    void setTranslation(float x ,float y, float z);
 
     /* Computing */
-    void computeTransform(double* dScreenTransformedCornerX,
-                          double* dScreenTransformedCornerY,
-                          double* dTransformedCornerZ);
+    void computeTransform(float* dScreenTransformedCornerX,
+                          float* dScreenTransformedCornerY,
+                          float* dTransformedCornerZ);
     void getImageCenterPoint(int* centerPointX, int* centerPointY);
 
     /* Matrix Op */
@@ -38,14 +38,14 @@ public:
 
 private:
     /* Angles */
-    double m_dAngleX;
-    double m_dAngleY;
-    double m_dAngleZ;
+    float m_dAngleX;
+    float m_dAngleY;
+    float m_dAngleZ;
 
     /* Translation */
-    double m_dX;
-    double m_dY;
-    double m_dZ;
+    float m_dX;
+    float m_dY;
+    float m_dZ;
 
     /* FOV */
     float m_fFOVUp;
@@ -63,7 +63,7 @@ private:
     int m_iCenterPointY;
 
     /* Rotation Matrix */
-    double m_dRotationMatrix[4][4];
+    float m_dRotationMatrix[4][4];
 };
 
 #endif // GVTRANSFORM_H
