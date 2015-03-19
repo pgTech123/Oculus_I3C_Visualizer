@@ -12,7 +12,7 @@
 I3COculusEngine::I3COculusEngine()
 {
     m_pucData = NULL;
-    m_pbPixelsFilled = NULL;
+    m_pucPixelsFilled = NULL;
     m_iArrCubeAtLevel = NULL;
     m_pGVImageArray = NULL;
 }
@@ -40,12 +40,12 @@ int I3COculusEngine::openI3CFile(const char* filename)
 
 bool I3COculusEngine::setImageSize(int width, int height)
 {
-    if(m_pucData == NULL && m_pbPixelsFilled == NULL){
+    if(m_pucData == NULL && m_pucPixelsFilled == NULL){
         m_width = width;
         m_height = height;
         int imageDataSize = m_width * m_height * 3;
         m_pucData = new unsigned char[imageDataSize];
-        m_pbPixelsFilled = new bool[m_width * m_height];
+        m_pucPixelsFilled = new unsigned char[m_width * m_height];
         return true;
     }
     return false;
@@ -72,7 +72,7 @@ void I3COculusEngine::generateImage()
     //Initialize every pixels as empty
     for(int i = 0; i < width_x_height; i++)
     {
-        m_pbPixelsFilled[i] = false;
+        m_pucPixelsFilled[i] = 0;
     }
 
     //Compute cube corners projected on the frame
@@ -105,7 +105,7 @@ void I3COculusEngine::generateImage()
     //Fill every pixels left empty with black
     for(int i = 0; i < width_x_height; i++)
     {
-        if(m_pbPixelsFilled[i] == false)
+        if(m_pucPixelsFilled[i] == 0)
         {
             m_pucData[3*i] = 0;
             m_pucData[(3*i) + 1] = 0;
@@ -234,7 +234,7 @@ int I3COculusEngine::readPixelCubes(fstream *file)
         m_pGVImageArray[iCubeBeingWritten] = new I3CCube(&m_width,
                                                              &m_height,
                                                              &*m_pucData,
-                                                             &*m_pbPixelsFilled);
+                                                             &*m_pucPixelsFilled);
         iError = readMap(file, &ucMap, &iNumOfPixels);
         if(iError != NO_ERRORS){
             return iError;
@@ -286,17 +286,17 @@ int I3COculusEngine::readIndexCubes(fstream *file)
             /* Set cube with child addresses */
             if(m_iNumberOfLevels == level+1){
                 //cout << "Master Cube" << endl;
-                this->addReferenceCube(ucMap, (GVIndexCube**)&m_pGVImageArray[iAddressCubesCursorOffset]);
+                this->addReferenceCube(ucMap, &m_pGVImageArray[iAddressCubesCursorOffset]);
             }
             else{
 
                 m_pGVImageArray[iCubeBeingWritten] = new I3CCube(&m_width,
                                                                      &m_height,
                                                                      &*m_pucData,
-                                                                     &*m_pbPixelsFilled);
+                                                                     &*m_pucPixelsFilled);
 
                 m_pGVImageArray[iCubeBeingWritten]->addReferenceCube(ucMap,
-                                                                     (GVIndexCube**)&m_pGVImageArray[iAddressCubesCursorOffset]);
+                                                                     &m_pGVImageArray[iAddressCubesCursorOffset]);
             }
 
             /* Update Offset */
@@ -331,9 +331,9 @@ void I3COculusEngine::clearImageInMemory()
         delete[] m_pucData;
         m_pucData = NULL;
     }
-    if(m_pbPixelsFilled != NULL){
-        delete[] m_pbPixelsFilled;
-        m_pbPixelsFilled = NULL;
+    if(m_pucPixelsFilled != NULL){
+        delete[] m_pucPixelsFilled;
+        m_pucPixelsFilled = NULL;
     }
 
     if(m_pGVImageArray != NULL){

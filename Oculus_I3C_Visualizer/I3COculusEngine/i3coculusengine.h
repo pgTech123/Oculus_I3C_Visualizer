@@ -14,6 +14,7 @@
 #include <fstream>
 #include "i3ccube.h"
 #include "Utils/gvtransform.h"
+#include "Utils/gvbinaryfunctions.h"
 
 
 /* Error Definition */
@@ -88,7 +89,7 @@ private:
     int m_width;
     int m_height;
     unsigned char* m_pucData;
-    bool* m_pbPixelsFilled;
+    unsigned char* m_pucPixelsFilled;
 
     int m_iCenterPointX;
     int m_iCenterPointY;

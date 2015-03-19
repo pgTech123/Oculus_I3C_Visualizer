@@ -1,15 +1,119 @@
 #include "i3ccube.h"
 
-I3CCube::I3CCube():GVIndexCube()
+Coordinate Coordinate::midCoord(Coordinate coord1, Coordinate coord2)
 {
+    Coordinate result;
+    result.x = (coord1.x + coord2.x) / 2;
+    result.y = (coord1.y + coord2.y) / 2;
+    result.z = (coord1.z + coord2.z) / 2;
+
+    return result;
+}
+
+I3CCube::I3CCube()
+{
+    initializeCube();
 }
 
 I3CCube::I3CCube(int* p_iImageWidth,
                  int* p_iImageHeight,
                  unsigned char* p_ucImageData,
-                 bool* p_bPixelFilled):
-       GVIndexCube(p_iImageWidth, p_iImageHeight, p_ucImageData, p_bPixelFilled)
+                 unsigned char* p_ucPixelFilled)
 {
+    initializeCube();
+    setImageProperty(p_iImageWidth, p_iImageHeight, p_ucImageData, p_ucPixelFilled);
+}
+
+I3CCube::~I3CCube()
+{
+    if(m_ucRed != NULL){
+        delete[] m_ucRed;
+    }
+    if(m_ucGreen != NULL){
+        delete[] m_ucGreen;
+    }
+    if(m_ucBlue != NULL){
+        delete[] m_ucBlue;
+    }
+    if(m_pArrChildCubes != NULL){
+        delete[] m_pArrChildCubes;
+    }
+}
+
+int I3CCube::setImageProperty(int* p_iImageWidth,
+                               int* p_iImageHeight,
+                               unsigned char* p_ucImageData,
+                               unsigned char* p_ucPixelFilled)
+{
+    if(*p_iImageWidth > 0){
+        m_piImageWidth = p_iImageWidth;
+    }else{
+        return ERR_BAD_WIDTH_PTR;
+    }
+    if(*p_iImageHeight > 0){
+        m_piImageHeight = p_iImageHeight;
+    }else{
+        return ERR_BAD_HEIGHT_PTR;
+    }
+    if(p_ucImageData != NULL){
+        m_pucImageData = p_ucImageData;
+    }else{
+        return ERR_NULL_IMG_PTR;
+    }
+    if(p_ucPixelFilled != NULL){
+        m_pucPixelFilled = p_ucPixelFilled;
+    }else{
+        return ERR_NULL_FILLED_PX_PTR;
+    }
+    return NO_ERR;
+}
+
+int I3CCube::getHierarchyLevel()
+{
+    return m_iHierarchyLevel;
+}
+
+void I3CCube::addPixelsCube(unsigned char ucMap, int* ucRed, int* ucGreen, int* ucBlue)
+{
+    m_ucMap = ucMap;
+    m_iHierarchyLevel = 0;
+    int i_Counter = 0;
+
+    /* Create storage according to the map */
+    m_ucRed = new unsigned char[8];
+    m_ucGreen = new unsigned char[8];
+    m_ucBlue = new unsigned char[8];
+
+    /* Set the value for each specified pixel */
+    for(int i = 0; i < 8; i++)
+    {
+        if(m_ucMap & (0x01 << i)){
+            m_ucRed[i] = (unsigned char)ucRed[i_Counter];
+            m_ucGreen[i] = (unsigned char)ucGreen[i_Counter];
+            m_ucBlue[i] = (unsigned char)ucBlue[i_Counter];
+            i_Counter++;
+        }
+    }
+}
+
+void I3CCube::addReferenceCube(unsigned char ucMap, I3CCube** p_ChildCubeRef)
+{
+    /* Set hierarchy level */
+    m_iHierarchyLevel = p_ChildCubeRef[0]->getHierarchyLevel() + 1;
+
+    /* Create storage according to the map */
+    m_ucMap = ucMap;
+    m_pArrChildCubes = new I3CCube*[8];
+
+    /* Set the reference for each specified child cube */
+    int i_Counter = 0;
+    for(int i = 0; i < 8; i++)
+    {
+        if(m_ucMap & (0x01 << i)){
+            m_pArrChildCubes[i] = (I3CCube*)p_ChildCubeRef[i_Counter];
+            i_Counter++;
+        }
+    }
 }
 
 void I3CCube::render(float iArrPosX[8],
@@ -32,12 +136,31 @@ void I3CCube::render(float iArrPosX[8],
     }
 }
 
+
+void I3CCube::initializeCube()
+{
+    m_piImageWidth = NULL;
+    m_piImageHeight = NULL;
+    m_pucImageData = NULL;
+    m_pucPixelFilled = NULL;
+    m_iHierarchyLevel = -1;
+
+    m_ucRed = NULL;
+    m_ucGreen = NULL;
+    m_ucBlue = NULL;
+    m_pArrChildCubes = NULL;
+}
+
+
 void I3CCube::renderReference(float iArrPosX[8],
                               float iArrPosY[8],
                               float iArrPosZ[8],
                               unsigned char ucSortedByDstFromScreen[8])
 {
-    //Compute subcorners: if all z -, return
+
+    computeSubcorners(iArrPosX, iArrPosY, iArrPosZ);
+
+    //render child according to order (sorted by dst): if z-, jump
 }
 
 void I3CCube::renderPixels(float iArrPosX[8],
@@ -45,5 +168,35 @@ void I3CCube::renderPixels(float iArrPosX[8],
                            float iArrPosZ[8],
                            unsigned char ucSortedByDstFromScreen[8])
 {
+    //Compute(x/z and y/z) cube2pixel (pixel size)
+    //Draw and adjust alpha if interpolation
+}
 
+void I3CCube::computeSubcorners(float iArrPosX[8],
+                                float iArrPosY[8],
+                                float iArrPosZ[8])
+{
+    int outterCornersIndex[8] = {0, 2, 8, 6, 18, 20, 24, 26};
+    //Fill outter corners
+    for(int i = 0; i < 8; i++){
+        m_fArrSubcorners[outterCornersIndex[i]].x = iArrPosX[i];
+        m_fArrSubcorners[outterCornersIndex[i]].y = iArrPosY[i];
+        m_fArrSubcorners[outterCornersIndex[i]].z = iArrPosZ[i];
+    }
+
+    //Compute Mid
+    int midCornersIndex[12] = {1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25};
+    for(int i = 0; i < 12; i++){
+        //TODO: Compute mid
+        //m_fArrSubcorners[midCornersIndex[i]] = m_fArrSubcorners[i];
+    }
+
+    //Compute mid face
+    int midFacesIndex[6] = {4, 10, 12, 14, 16, 22};
+    for(int i = 0; i < 6; i++){
+        //TODO: Compute midface
+    }
+
+    int cubeCenter[1] = {13};
+    //TODO compute center
 }
