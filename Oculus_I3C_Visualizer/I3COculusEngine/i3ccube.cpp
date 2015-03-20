@@ -1,13 +1,10 @@
 #include "i3ccube.h"
 
-Coordinate Coordinate::midCoord(Coordinate coord1, Coordinate coord2)
+void Coordinate::fromMidCoord(Coordinate coord1, Coordinate coord2)
 {
-    Coordinate result;
-    result.x = (coord1.x + coord2.x) / 2;
-    result.y = (coord1.y + coord2.y) / 2;
-    result.z = (coord1.z + coord2.z) / 2;
-
-    return result;
+    this->x = (coord1.x + coord2.x) / 2;
+    this->y = (coord1.y + coord2.y) / 2;
+    this->z = (coord1.z + coord2.z) / 2;
 }
 
 I3CCube::I3CCube()
@@ -160,6 +157,13 @@ void I3CCube::renderReference(float iArrPosX[8],
 
     computeSubcorners(iArrPosX, iArrPosY, iArrPosZ);
 
+    for(int i = 0; i < 8; i ++)
+    {
+        if((m_ucMap & (0x01 << ucSortedByDstFromScreen[i]))){
+            //TODO: if(/*TODO: Z+ and not fully hidden*/)
+            //m_pArrChildCubes[ucSortedByDstFromScreen[i]]->render(/*pass child corner*/);
+        }
+    }
     //render child according to order (sorted by dst): if z-, jump
 }
 
@@ -186,17 +190,24 @@ void I3CCube::computeSubcorners(float iArrPosX[8],
 
     //Compute Mid
     int midCornersIndex[12] = {1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25};
+    int computeMidWith[12][2] = {{0,2}, {0,6}, {2,8}, {6,8}, {0,18}, {2,20},
+                                 {6,24}, {8,26}, {18,20}, {18,24}, {20,26}, {24,26}};
     for(int i = 0; i < 12; i++){
-        //TODO: Compute mid
-        //m_fArrSubcorners[midCornersIndex[i]] = m_fArrSubcorners[i];
+        m_fArrSubcorners[midCornersIndex[i]].fromMidCoord(m_fArrSubcorners[computeMidWith[i][0]],
+                                                          m_fArrSubcorners[computeMidWith[i][1]]);
     }
 
     //Compute mid face
     int midFacesIndex[6] = {4, 10, 12, 14, 16, 22};
+    int computeMidFaceWith[6][2] = {{1,7}, {1,19}, {3,21}, {5,23}, {15,17}, {19,25}};
     for(int i = 0; i < 6; i++){
-        //TODO: Compute midface
+        m_fArrSubcorners[midFacesIndex[i]].fromMidCoord(m_fArrSubcorners[computeMidFaceWith[i][0]],
+                                                        m_fArrSubcorners[computeMidFaceWith[i][1]]);
     }
 
+    //Compute center
     int cubeCenter[1] = {13};
-    //TODO compute center
+    int computeFrom[1][2] = {{10,16}};
+    m_fArrSubcorners[cubeCenter[0]].fromMidCoord(m_fArrSubcorners[computeFrom[0][0]],
+                                                 m_fArrSubcorners[computeFrom[0][1]]);
 }

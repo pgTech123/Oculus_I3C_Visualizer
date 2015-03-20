@@ -19,7 +19,7 @@ public:
     float y;
     float z;
 
-    Coordinate midCoord(Coordinate coord1, Coordinate coord2);
+    void fromMidCoord(Coordinate coord1, Coordinate coord2);
 };
 
 
