@@ -118,21 +118,27 @@ void I3CCube::render(float iArrPosX[8],
                      float iArrPosZ[8],
                      unsigned char ucSortedByDstFromScreen[8])
 {
-    // Render cubes accordingly to their level
-    if(m_iHierarchyLevel > 0){
-        renderReference(iArrPosX,
-                    iArrPosY,
-                    iArrPosZ,
-                    ucSortedByDstFromScreen);
+    //Convert Pos to coodinates
+    Coordinate coord[8];
+    for(int i = 0; i < 8; i++){
+        coord[i].x = iArrPosX[i];
+        coord[i].y = iArrPosY[i];
+        coord[i].z = iArrPosZ[i];
     }
-    else{
-        renderPixels(iArrPosX,
-                    iArrPosY,
-                    iArrPosZ,
-                    ucSortedByDstFromScreen);
-    }
+    render(coord, ucSortedByDstFromScreen);
 }
 
+void I3CCube::render(Coordinate iArrPos[8],
+                     unsigned char ucSortedByDstFromScreen[8])
+{
+    // Render cubes accordingly to their level
+    if(m_iHierarchyLevel > 0){
+        renderReference(iArrPos, ucSortedByDstFromScreen);
+    }
+    else{
+        renderPixels(iArrPos, ucSortedByDstFromScreen);
+    }
+}
 
 void I3CCube::initializeCube()
 {
@@ -149,43 +155,31 @@ void I3CCube::initializeCube()
 }
 
 
-void I3CCube::renderReference(float iArrPosX[8],
-                              float iArrPosY[8],
-                              float iArrPosZ[8],
+void I3CCube::renderReference(Coordinate iArrPos[8],
                               unsigned char ucSortedByDstFromScreen[8])
 {
+    computeSubcorners(iArrPos);
 
-    computeSubcorners(iArrPosX, iArrPosY, iArrPosZ);
-
-    for(int i = 0; i < 8; i ++)
-    {
+    for(int i = 0; i < 8; i ++){
         if((m_ucMap & (0x01 << ucSortedByDstFromScreen[i]))){
-            //TODO: if(/*TODO: Z+ and not fully hidden*/)
-            //m_pArrChildCubes[ucSortedByDstFromScreen[i]]->render(/*pass child corner*/);
+            renderChildIfZPositive(ucSortedByDstFromScreen[i], ucSortedByDstFromScreen);
         }
     }
-    //render child according to order (sorted by dst): if z-, jump
 }
 
-void I3CCube::renderPixels(float iArrPosX[8],
-                           float iArrPosY[8],
-                           float iArrPosZ[8],
+void I3CCube::renderPixels(Coordinate iArrPos[8],
                            unsigned char ucSortedByDstFromScreen[8])
 {
     //Compute(x/z and y/z) cube2pixel (pixel size)
     //Draw and adjust alpha if interpolation
 }
 
-void I3CCube::computeSubcorners(float iArrPosX[8],
-                                float iArrPosY[8],
-                                float iArrPosZ[8])
+void I3CCube::computeSubcorners(Coordinate iArrPos[8])
 {
-    int outterCornersIndex[8] = {0, 2, 8, 6, 18, 20, 24, 26};
     //Fill outter corners
+    int outterCornersIndex[8] = {0, 2, 8, 6, 18, 20, 24, 26};
     for(int i = 0; i < 8; i++){
-        m_fArrSubcorners[outterCornersIndex[i]].x = iArrPosX[i];
-        m_fArrSubcorners[outterCornersIndex[i]].y = iArrPosY[i];
-        m_fArrSubcorners[outterCornersIndex[i]].z = iArrPosZ[i];
+        m_fArrSubcorners[outterCornersIndex[i]] = iArrPos[i];
     }
 
     //Compute Mid
@@ -210,4 +204,33 @@ void I3CCube::computeSubcorners(float iArrPosX[8],
     int computeFrom[1][2] = {{10,16}};
     m_fArrSubcorners[cubeCenter[0]].fromMidCoord(m_fArrSubcorners[computeFrom[0][0]],
                                                  m_fArrSubcorners[computeFrom[0][1]]);
+}
+
+void I3CCube::renderChildIfZPositive(unsigned char cubeId,
+                                     unsigned char ucSortedByDstFromScreen[8])
+{
+    int childBaseCorner[8] = {0, 1, 3, 4, 9, 10, 12, 13};
+    Coordinate childCorners[8];
+
+    childCorners[0] = m_fArrSubcorners[childBaseCorner[cubeId]];
+    childCorners[1] = m_fArrSubcorners[childBaseCorner[cubeId]+1];
+    childCorners[2] = m_fArrSubcorners[childBaseCorner[cubeId]+3];
+    childCorners[3] = m_fArrSubcorners[childBaseCorner[cubeId]+4];
+    childCorners[4] = m_fArrSubcorners[childBaseCorner[cubeId]+9];
+    childCorners[5] = m_fArrSubcorners[childBaseCorner[cubeId]+10];
+    childCorners[6] = m_fArrSubcorners[childBaseCorner[cubeId]+12];
+    childCorners[7] = m_fArrSubcorners[childBaseCorner[cubeId]+13];
+
+    //If all Z are negative, stop rendering: won't be seen
+    for(int i = 0; i < 8; i++){
+        if(childCorners[i] > 0){
+            break;
+        }
+        return; //All negative: stop rendering this branch
+    }
+
+    //TODO: Check zone covered by pixels already rendered: see if could improve performance???
+
+    m_pArrChildCubes[ucSortedByDstFromScreen[cubeId]]->render(childCorners,
+                                                              ucSortedByDstFromScreen);
 }

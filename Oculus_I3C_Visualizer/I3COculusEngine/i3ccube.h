@@ -50,25 +50,25 @@ public:
                 float iArrPosZ[8],
                 unsigned char ucSortedByDstFromScreen[8]);
 
+    void render(Coordinate iArrPos[8],
+                unsigned char ucSortedByDstFromScreen[8]);
+
 private:
     //Initialization
     void initializeCube();
 
 
     //Rendering
-    void renderReference(float iArrPosX[8],
-                         float iArrPosY[8],
-                         float iArrPosZ[8],
+    void renderReference(Coordinate iArrPos[8],
                          unsigned char ucSortedByDstFromScreen[8]);
 
-    void renderPixels(float iArrPosX[8],
-                      float iArrPosY[8],
-                      float iArrPosZ[8],
+    void renderPixels(Coordinate iArrPos[8],
                       unsigned char ucSortedByDstFromScreen[8]);
 
-    void computeSubcorners(float iArrPosX[8],
-                           float iArrPosY[8],
-                           float iArrPosZ[8]);
+    void computeSubcorners(Coordinate iArrPos[8]);
+
+    void renderChildIfZPositive(unsigned char cubeId,
+                                unsigned char ucSortedByDstFromScreen[8]);
 
 private:
     //Hierarchy level
