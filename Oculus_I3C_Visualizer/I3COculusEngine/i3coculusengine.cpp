@@ -97,9 +97,16 @@ void I3COculusEngine::generateImage()
                              m_dCornerSortedByDst,
                              (float)m_iCenterPointX,
                              (float)m_iCenterPointY);*/
+
+    //TODO: Faire comme du monde
+    RenderingScreen scr;
+    scr.left_rightRatio = 0.5;
+    scr.up_downRatio = 0.5;
+
     render(m_dScreenTransformedCornerX,
            m_dScreenTransformedCornerY,
            m_dDstFromScreenTransformed,
+           &scr,
            m_dCornerSortedByDst);
 
     //Fill every pixels left empty with black

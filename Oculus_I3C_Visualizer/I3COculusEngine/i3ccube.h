@@ -22,6 +22,26 @@ public:
     void fromMidCoord(Coordinate coord1, Coordinate coord2);
 };
 
+typedef struct{
+    float up;
+    float down;
+    float left;
+    float right;
+}FOV;
+
+typedef struct{
+    //Value between 0 and 1
+    //Up/Down Ratio
+    float up_downRatio;
+    //Left/Right Ratio
+    float left_rightRatio;
+}RenderingScreen;
+
+
+/* *******************************************************************
+ * Warning: I3CCube consider that the render function won't be called
+ *          if there was an error of an sort setting ImageProperties.
+ * *******************************************************************/
 
 class I3CCube
 {
@@ -35,9 +55,9 @@ public:
 
     //Accessors
     int setImageProperty(int* p_iImageWidth,
-                          int* p_iImageHeight,
-                          unsigned char* p_ucImageData,
-                          unsigned char* p_ucPixelFilled);
+                         int* p_iImageHeight,
+                         unsigned char* p_ucImageData,
+                         unsigned char* p_ucPixelFilled);
     int getHierarchyLevel();
 
     //Image
@@ -48,9 +68,11 @@ public:
     void render(float iArrPosX[8],
                 float iArrPosY[8],
                 float iArrPosZ[8],
+                RenderingScreen *renderingScreen,
                 unsigned char ucSortedByDstFromScreen[8]);
 
     void render(Coordinate iArrPos[8],
+                RenderingScreen *renderingScreen,
                 unsigned char ucSortedByDstFromScreen[8]);
 
 private:
@@ -60,14 +82,17 @@ private:
 
     //Rendering
     void renderReference(Coordinate iArrPos[8],
+                         RenderingScreen *renderingScreen,
                          unsigned char ucSortedByDstFromScreen[8]);
 
     void renderPixels(Coordinate iArrPos[8],
+                      RenderingScreen *renderingScreen,
                       unsigned char ucSortedByDstFromScreen[8]);
 
     void computeSubcorners(Coordinate iArrPos[8]);
 
     void renderChildIfZPositive(unsigned char cubeId,
+                                RenderingScreen *renderingScreen,
                                 unsigned char ucSortedByDstFromScreen[8]);
 
 private:

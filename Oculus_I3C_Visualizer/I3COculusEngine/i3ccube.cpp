@@ -116,6 +116,7 @@ void I3CCube::addReferenceCube(unsigned char ucMap, I3CCube** p_ChildCubeRef)
 void I3CCube::render(float iArrPosX[8],
                      float iArrPosY[8],
                      float iArrPosZ[8],
+                     RenderingScreen *renderingScreen,
                      unsigned char ucSortedByDstFromScreen[8])
 {
     //Convert Pos to coodinates
@@ -125,18 +126,19 @@ void I3CCube::render(float iArrPosX[8],
         coord[i].y = iArrPosY[i];
         coord[i].z = iArrPosZ[i];
     }
-    render(coord, ucSortedByDstFromScreen);
+    render(coord, renderingScreen, ucSortedByDstFromScreen);
 }
 
 void I3CCube::render(Coordinate iArrPos[8],
+                     RenderingScreen *renderingScreen,
                      unsigned char ucSortedByDstFromScreen[8])
 {
     // Render cubes accordingly to their level
     if(m_iHierarchyLevel > 0){
-        renderReference(iArrPos, ucSortedByDstFromScreen);
+        renderReference(iArrPos, renderingScreen, ucSortedByDstFromScreen);
     }
     else{
-        renderPixels(iArrPos, ucSortedByDstFromScreen);
+        renderPixels(iArrPos, renderingScreen, ucSortedByDstFromScreen);
     }
 }
 
@@ -156,21 +158,39 @@ void I3CCube::initializeCube()
 
 
 void I3CCube::renderReference(Coordinate iArrPos[8],
+                              RenderingScreen *renderingScreen,
                               unsigned char ucSortedByDstFromScreen[8])
 {
     computeSubcorners(iArrPos);
 
     for(int i = 0; i < 8; i ++){
         if((m_ucMap & (0x01 << ucSortedByDstFromScreen[i]))){
-            renderChildIfZPositive(ucSortedByDstFromScreen[i], ucSortedByDstFromScreen);
+            renderChildIfZPositive(ucSortedByDstFromScreen[i],
+                                   renderingScreen,
+                                   ucSortedByDstFromScreen);
         }
     }
 }
 
 void I3CCube::renderPixels(Coordinate iArrPos[8],
+                           RenderingScreen *renderingScreen,
                            unsigned char ucSortedByDstFromScreen[8])
 {
+    //Rendering screen dimentions
+    int pixelsUp = (float)(*m_piImageHeight) * (*renderingScreen).up_downRatio;
+    int pixelsDown = (*m_piImageHeight) - pixelsUp;
+    int pixelsLeft = (float)(*m_piImageWidth) * (*renderingScreen).left_rightRatio;
+    int pixelsRight = (*m_piImageWidth) - pixelsLeft;
+
     //Compute(x/z and y/z) cube2pixel (pixel size)
+    int screenCoordX[8];
+    int screenCoordY[8];
+    for(int i = 0; i < 8; i++){
+        screenCoordX[i] = iArrPos[i].x / iArrPos[i].z;
+        screenCoordY[i] = iArrPos[i].y / iArrPos[i].z;
+    }
+
+    //TODO: check if in pixel boundary, if not already drawn and draw outter boundaries(8corners)
     //Draw and adjust alpha if interpolation
 }
 
@@ -207,6 +227,7 @@ void I3CCube::computeSubcorners(Coordinate iArrPos[8])
 }
 
 void I3CCube::renderChildIfZPositive(unsigned char cubeId,
+                                     RenderingScreen *renderingScreen,
                                      unsigned char ucSortedByDstFromScreen[8])
 {
     int childBaseCorner[8] = {0, 1, 3, 4, 9, 10, 12, 13};
@@ -223,7 +244,7 @@ void I3CCube::renderChildIfZPositive(unsigned char cubeId,
 
     //If all Z are negative, stop rendering: won't be seen
     for(int i = 0; i < 8; i++){
-        if(childCorners[i] > 0){
+        if(childCorners[i].z > 0){
             break;
         }
         return; //All negative: stop rendering this branch
@@ -232,5 +253,6 @@ void I3CCube::renderChildIfZPositive(unsigned char cubeId,
     //TODO: Check zone covered by pixels already rendered: see if could improve performance???
 
     m_pArrChildCubes[ucSortedByDstFromScreen[cubeId]]->render(childCorners,
+                                                              renderingScreen,
                                                               ucSortedByDstFromScreen);
 }
