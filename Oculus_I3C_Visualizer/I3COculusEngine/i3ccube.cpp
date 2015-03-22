@@ -161,7 +161,12 @@ void I3CCube::renderReference(Coordinate iArrPos[8],
                               RenderingScreen *renderingScreen,
                               unsigned char ucSortedByDstFromScreen[8])
 {
-    computeSubcorners(iArrPos);
+    //Fill outter corners
+    int outterCornersIndex[8] = {0, 2, 8, 6, 18, 20, 24, 26};
+    for(int i = 0; i < 8; i++){
+        m_fArrSubcorners[outterCornersIndex[i]] = iArrPos[i];
+    }
+    computeSubcorners();
 
     for(int i = 0; i < 8; i ++){
         if((m_ucMap & (0x01 << ucSortedByDstFromScreen[i]))){
@@ -182,26 +187,29 @@ void I3CCube::renderPixels(Coordinate iArrPos[8],
     int pixelsLeft = (float)(*m_piImageWidth) * (*renderingScreen).left_rightRatio;
     int pixelsRight = (*m_piImageWidth) - pixelsLeft;
 
-    //Compute(x/z and y/z) cube2pixel (pixel size)
-    int screenCoordX[8];
-    int screenCoordY[8];
-    for(int i = 0; i < 8; i++){
-        screenCoordX[i] = iArrPos[i].x / iArrPos[i].z;
-        screenCoordY[i] = iArrPos[i].y / iArrPos[i].z;
-    }
-
-    //TODO: check if in pixel boundary, if not already drawn and draw outter boundaries(8corners)
-    //Draw and adjust alpha if interpolation
-}
-
-void I3CCube::computeSubcorners(Coordinate iArrPos[8])
-{
-    //Fill outter corners
+    //Here, m_fArrSubcorners is used to represent the screen coordinate
+    //so the "z" coordinate is not used.
+    //We compute the perspective: Focal Length * (X or Y) / Z
     int outterCornersIndex[8] = {0, 2, 8, 6, 18, 20, 24, 26};
     for(int i = 0; i < 8; i++){
-        m_fArrSubcorners[outterCornersIndex[i]] = iArrPos[i];
+        m_fArrSubcorners[outterCornersIndex[i]].x = (iArrPos[i].x * renderingScreen->focalLength) / iArrPos[i].z;
+        m_fArrSubcorners[outterCornersIndex[i]].y = (iArrPos[i].y * renderingScreen->focalLength) / iArrPos[i].z;
+        m_fArrSubcorners[outterCornersIndex[i]].z = 0;
     }
 
+    computeSubcorners();    //Where "Z" will always be 0
+
+    //Draw
+    for(int i = 0; i < 8; i ++){
+        if((m_ucMap & (0x01 << ucSortedByDstFromScreen[i]))){
+            tryToDrawPixel(pixelsUp, pixelsDown, pixelsLeft, pixelsRight,
+                           ucSortedByDstFromScreen[i]);
+        }
+    }
+}
+
+void I3CCube::computeSubcorners()
+{
     //Compute Mid
     int midCornersIndex[12] = {1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25};
     int computeMidWith[12][2] = {{0,2}, {0,6}, {2,8}, {6,8}, {0,18}, {2,20},
@@ -255,4 +263,62 @@ void I3CCube::renderChildIfZPositive(unsigned char cubeId,
     m_pArrChildCubes[ucSortedByDstFromScreen[cubeId]]->render(childCorners,
                                                               renderingScreen,
                                                               ucSortedByDstFromScreen);
+}
+
+void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
+                             unsigned char cubeId)
+{
+    int childBaseCorner[8] = {0, 1, 3, 4, 9, 10, 12, 13};
+    Coordinate pixelCorners[8];
+
+    pixelCorners[0] = m_fArrSubcorners[childBaseCorner[cubeId]];
+    pixelCorners[1] = m_fArrSubcorners[childBaseCorner[cubeId]+1];
+    pixelCorners[2] = m_fArrSubcorners[childBaseCorner[cubeId]+3];
+    pixelCorners[3] = m_fArrSubcorners[childBaseCorner[cubeId]+4];
+    pixelCorners[4] = m_fArrSubcorners[childBaseCorner[cubeId]+9];
+    pixelCorners[5] = m_fArrSubcorners[childBaseCorner[cubeId]+10];
+    pixelCorners[6] = m_fArrSubcorners[childBaseCorner[cubeId]+12];
+    pixelCorners[7] = m_fArrSubcorners[childBaseCorner[cubeId]+13];
+
+    BoundingRect bound = findBoundingRect(pixelCorners);
+
+    //TODO: crop only what is seen
+
+    // As we don't expect the pixels to be seen (from too close),
+    // it seems appropriate to approximate a 3D pixel as a square
+    // with no orientation relative to the screen.
+    //TODO: fill it
+
+    //FUTUR: implement linear interpolation with alpha...
+}
+
+BoundingRect I3CCube::findBoundingRect(Coordinate corners[8])
+{
+    int lowerValueX = 1000000;
+    int lowerValueY = 1000000;
+    int higherValueX = -1000000;
+    int higherValueY = -1000000;
+    BoundingRect bounding;
+
+    for(int i = 0; i < 8; i++){
+        if(corners[i].x < lowerValueX){
+            lowerValueX = corners[i].x;
+        }
+        if(corners[i].y < lowerValueY){
+            lowerValueY = corners[i].y;
+        }
+        if(corners[i].x > higherValueX){
+            higherValueX = corners[i].x;
+        }
+        if(corners[i].y > higherValueY){
+            higherValueY = corners[i].y;
+        }
+    }
+
+    bounding.x = corners[0].x;
+    bounding.y = corners[0].y;
+    bounding.width = higherValueX - lowerValueX;
+    bounding.height = higherValueY - lowerValueY;
+
+    return bounding;
 }

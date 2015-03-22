@@ -102,6 +102,7 @@ void I3COculusEngine::generateImage()
     RenderingScreen scr;
     scr.left_rightRatio = 0.5;
     scr.up_downRatio = 0.5;
+    scr.focalLength = 50;
 
     render(m_dScreenTransformedCornerX,
            m_dScreenTransformedCornerY,

@@ -35,7 +35,16 @@ typedef struct{
     float up_downRatio;
     //Left/Right Ratio
     float left_rightRatio;
+    float focalLength;
 }RenderingScreen;
+
+typedef struct{
+    int width;
+    int height;
+    //Where X and Y are in the upper left corner
+    int x;
+    int y;
+}BoundingRect;
 
 
 /* *******************************************************************
@@ -89,11 +98,16 @@ private:
                       RenderingScreen *renderingScreen,
                       unsigned char ucSortedByDstFromScreen[8]);
 
-    void computeSubcorners(Coordinate iArrPos[8]);
+    void computeSubcorners();
 
     void renderChildIfZPositive(unsigned char cubeId,
                                 RenderingScreen *renderingScreen,
                                 unsigned char ucSortedByDstFromScreen[8]);
+
+    void tryToDrawPixel(int up, int down, int left, int right,
+                        unsigned char cubeId);
+
+    BoundingRect findBoundingRect(Coordinate corners[8]);
 
 private:
     //Hierarchy level
