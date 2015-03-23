@@ -100,9 +100,9 @@ void I3COculusEngine::generateImage()
 
     //TODO: Faire comme du monde
     RenderingScreen scr;
-    scr.left_rightRatio = 0.5;
-    scr.up_downRatio = 0.5;
-    scr.focalLength = 50;
+    scr.left_rightRatio = 0.4;
+    scr.up_downRatio = 0.7;
+    scr.focalLength = 300;
 
     render(m_dScreenTransformedCornerX,
            m_dScreenTransformedCornerY,

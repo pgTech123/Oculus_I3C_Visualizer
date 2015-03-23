@@ -11,6 +11,10 @@
 
 #include <iostream>
 
+//DEBUG
+using namespace std;
+//END DEBUG
+
 
 class Coordinate
 {

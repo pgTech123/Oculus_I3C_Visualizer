@@ -260,9 +260,7 @@ void I3CCube::renderChildIfZPositive(unsigned char cubeId,
 
     //TODO: Check zone covered by pixels already rendered: see if could improve performance???
 
-    m_pArrChildCubes[ucSortedByDstFromScreen[cubeId]]->render(childCorners,
-                                                              renderingScreen,
-                                                              ucSortedByDstFromScreen);
+    m_pArrChildCubes[cubeId]->render(childCorners, renderingScreen, ucSortedByDstFromScreen);
 }
 
 void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
@@ -270,6 +268,10 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
 {
     int childBaseCorner[8] = {0, 1, 3, 4, 9, 10, 12, 13};
     Coordinate pixelCorners[8];
+
+    //Adjustment
+    down = -down;
+    left = -left;
 
     pixelCorners[0] = m_fArrSubcorners[childBaseCorner[cubeId]];
     pixelCorners[1] = m_fArrSubcorners[childBaseCorner[cubeId]+1];
@@ -282,12 +284,61 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
 
     BoundingRect bound = findBoundingRect(pixelCorners);
 
-    //TODO: crop only what is seen
+    /*cout << "Down: " << down << endl;
+    cout << "Up: " << up << endl;
+    cout << "Y: " << bound.y << endl;
+    cout << "Height: " << bound.height << endl << endl;*/
+
+    //Check if seen
+    if(bound.y <= down || bound.y - bound.height > up){
+        return;
+    }
+
+    /*cout << "Left: " << left << endl;
+    cout << "Right: " << right << endl;
+    cout << "X: " << bound.x << endl;
+    cout << "Width: " << bound.width << endl << endl;*/
+    if(bound.x + bound.width < left || bound.x >= right){
+        return;
+    }
+
+    //Crop only what is seen
+    if(bound.y > up){
+        bound.y = up;
+    }
+    if(bound.y - bound.height < down){
+        bound.height = bound.y - down;
+    }
+    if(bound.x < left){
+        bound.x = left;
+    }
+    if(bound.x + bound.width > right){
+        bound.width = right - bound.x;
+    }
 
     // As we don't expect the pixels to be seen (from too close),
     // it seems appropriate to approximate a 3D pixel as a square
     // with no orientation relative to the screen.
-    //TODO: fill it
+    int fillingOrigin = bound.x - left + ((bound.y - down) * (*m_piImageWidth));
+
+    //cout << "FillingOrigin: " << fillingOrigin << endl;
+
+
+    int imageIndex = fillingOrigin;
+    for(int iY = 0; iY < bound.height; iY++){
+        for(int iX = 0; iX < bound.width; iX++){
+            if(m_pucPixelFilled[imageIndex] == 0){
+                //Write Pixel
+                m_pucImageData[imageIndex*3] = m_ucRed[cubeId];
+                m_pucImageData[imageIndex*3 + 1] = m_ucGreen[cubeId];
+                m_pucImageData[imageIndex*3 + 2] = m_ucBlue[cubeId];
+                //Alpha
+                m_pucPixelFilled[imageIndex] = 255;
+            }
+            imageIndex ++;
+        }
+        imageIndex = fillingOrigin + (*m_piImageWidth);
+    }
 
     //FUTUR: implement linear interpolation with alpha...
 }

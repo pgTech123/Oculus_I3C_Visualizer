@@ -52,7 +52,7 @@ class I3COculusEngine: public I3CCube
 {
 public:
     I3COculusEngine();
-    ~I3COculusEngine();
+    virtual ~I3COculusEngine();
     int openI3CFile(const char* filename);
     bool setImageSize(int width, int height);
     void setFOV(float down, float up, float right, float left);
