@@ -344,14 +344,14 @@ void I3COculusEngine::clearImageInMemory()
         m_pucPixelsFilled = NULL;
     }
 
-    if(m_pGVImageArray != NULL){
+ /*   if(m_pGVImageArray != NULL){
         for(int i = 0; i< m_iTotalNumberOfCubes ; i++){
             delete m_pGVImageArray[i];
         }
         delete[] m_pGVImageArray;
         m_pGVImageArray = NULL;
     }
-
+*/
     if(m_iArrCubeAtLevel != NULL){
         delete[] m_iArrCubeAtLevel;
         m_iArrCubeAtLevel = NULL;

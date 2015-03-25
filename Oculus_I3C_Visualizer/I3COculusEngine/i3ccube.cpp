@@ -162,7 +162,7 @@ void I3CCube::renderReference(Coordinate iArrPos[8],
                               unsigned char ucSortedByDstFromScreen[8])
 {
     //Fill outter corners
-    int outterCornersIndex[8] = {0, 2, 8, 6, 18, 20, 24, 26};
+    int outterCornersIndex[8] = {0, 2, 20, 18, 6, 8, 26, 24};
     for(int i = 0; i < 8; i++){
         m_fArrSubcorners[outterCornersIndex[i]] = iArrPos[i];
     }
@@ -190,7 +190,7 @@ void I3CCube::renderPixels(Coordinate iArrPos[8],
     //Here, m_fArrSubcorners is used to represent the screen coordinate
     //so the "z" coordinate is not used.
     //We compute the perspective: Focal Length * (X or Y) / Z
-    int outterCornersIndex[8] = {0, 2, 8, 6, 18, 20, 24, 26};
+    int outterCornersIndex[8] = {0, 2, 20, 18, 6, 8, 26, 24};
     for(int i = 0; i < 8; i++){
         m_fArrSubcorners[outterCornersIndex[i]].x = (iArrPos[i].x * renderingScreen->focalLength) / iArrPos[i].z;
         m_fArrSubcorners[outterCornersIndex[i]].y = (iArrPos[i].y * renderingScreen->focalLength) / iArrPos[i].z;
@@ -238,17 +238,17 @@ void I3CCube::renderChildIfZPositive(unsigned char cubeId,
                                      RenderingScreen *renderingScreen,
                                      unsigned char ucSortedByDstFromScreen[8])
 {
-    int childBaseCorner[8] = {0, 1, 3, 4, 9, 10, 12, 13};
+    int childBaseCorner[8] = {0, 1, 10, 9, 3, 4, 13, 12};
     Coordinate childCorners[8];
 
     childCorners[0] = m_fArrSubcorners[childBaseCorner[cubeId]];
     childCorners[1] = m_fArrSubcorners[childBaseCorner[cubeId]+1];
-    childCorners[2] = m_fArrSubcorners[childBaseCorner[cubeId]+3];
-    childCorners[3] = m_fArrSubcorners[childBaseCorner[cubeId]+4];
-    childCorners[4] = m_fArrSubcorners[childBaseCorner[cubeId]+9];
-    childCorners[5] = m_fArrSubcorners[childBaseCorner[cubeId]+10];
-    childCorners[6] = m_fArrSubcorners[childBaseCorner[cubeId]+12];
-    childCorners[7] = m_fArrSubcorners[childBaseCorner[cubeId]+13];
+    childCorners[2] = m_fArrSubcorners[childBaseCorner[cubeId]+10];
+    childCorners[3] = m_fArrSubcorners[childBaseCorner[cubeId]+9];
+    childCorners[4] = m_fArrSubcorners[childBaseCorner[cubeId]+3];
+    childCorners[5] = m_fArrSubcorners[childBaseCorner[cubeId]+4];
+    childCorners[6] = m_fArrSubcorners[childBaseCorner[cubeId]+13];
+    childCorners[7] = m_fArrSubcorners[childBaseCorner[cubeId]+12];
 
     //If all Z are negative, stop rendering: won't be seen
     for(int i = 0; i < 8; i++){
@@ -266,21 +266,22 @@ void I3CCube::renderChildIfZPositive(unsigned char cubeId,
 void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
                              unsigned char cubeId)
 {
-    int childBaseCorner[8] = {0, 1, 3, 4, 9, 10, 12, 13};
+    int childBaseCorner[8] = {0, 1, 10, 9, 3, 4, 13, 12};
     Coordinate pixelCorners[8];
 
     //Adjustment
     down = -down;
     left = -left;
 
+    //TODO: MODIFY
     pixelCorners[0] = m_fArrSubcorners[childBaseCorner[cubeId]];
     pixelCorners[1] = m_fArrSubcorners[childBaseCorner[cubeId]+1];
-    pixelCorners[2] = m_fArrSubcorners[childBaseCorner[cubeId]+3];
-    pixelCorners[3] = m_fArrSubcorners[childBaseCorner[cubeId]+4];
-    pixelCorners[4] = m_fArrSubcorners[childBaseCorner[cubeId]+9];
-    pixelCorners[5] = m_fArrSubcorners[childBaseCorner[cubeId]+10];
-    pixelCorners[6] = m_fArrSubcorners[childBaseCorner[cubeId]+12];
-    pixelCorners[7] = m_fArrSubcorners[childBaseCorner[cubeId]+13];
+    pixelCorners[2] = m_fArrSubcorners[childBaseCorner[cubeId]+10];
+    pixelCorners[3] = m_fArrSubcorners[childBaseCorner[cubeId]+9];
+    pixelCorners[4] = m_fArrSubcorners[childBaseCorner[cubeId]+3];
+    pixelCorners[5] = m_fArrSubcorners[childBaseCorner[cubeId]+4];
+    pixelCorners[6] = m_fArrSubcorners[childBaseCorner[cubeId]+13];
+    pixelCorners[7] = m_fArrSubcorners[childBaseCorner[cubeId]+12];
 
     BoundingRect bound = findBoundingRect(pixelCorners);
 
