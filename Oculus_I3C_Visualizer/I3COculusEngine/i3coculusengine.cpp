@@ -51,11 +51,6 @@ bool I3COculusEngine::setImageSize(int width, int height)
     return false;
 }
 
-void I3COculusEngine::setFOV(float down, float up, float right, float left)
-{
-    m_Transform.setFOV(down, up, right, left);
-}
-
 void I3COculusEngine::setRotation(double yaw, double pitch, double roll)
 {
     m_Transform.setAngles(yaw, pitch, roll);
@@ -66,7 +61,7 @@ void I3COculusEngine::setPosition(double x, double y, double z)
     m_Transform.setTranslation(x, y, z);
 }
 
-void I3COculusEngine::generateImage()
+void I3COculusEngine::generateImage(RenderingScreen *scr)
 {
     int width_x_height = m_width * m_height;
     //Initialize every pixels as empty
@@ -83,7 +78,7 @@ void I3COculusEngine::generateImage()
     //Sort points on Z axis by distance
     sort(m_dDstFromScreenTransformed, m_dCornerSortedByDst);
 
-    for(int i = 0; i < 8; i++){
+    /*for(int i = 0; i < 8; i++){
         cout << "Rotated Corner " << i << " X : " << m_dScreenTransformedCornerX[i] << endl;
         cout << "Rotated Corner " << i << " Y : " << m_dScreenTransformedCornerY[i] << endl;
         cout << "Rotated Corner " << i << " Z : " << m_dDstFromScreenTransformed[i] << endl;
@@ -91,24 +86,12 @@ void I3COculusEngine::generateImage()
     }//*/
 
     //Rendering
-    //m_Transform.getImageCenterPoint(&m_iCenterPointX, &m_iCenterPointY);
-    /*ApplyRotation_and_Render(m_dScreenTransformedCornerX,
-                             m_dScreenTransformedCornerY,
-                             m_dCornerSortedByDst,
-                             (float)m_iCenterPointX,
-                             (float)m_iCenterPointY);*/
-
-    //TODO: Faire comme du monde
-    RenderingScreen scr;
-    scr.left_rightRatio = 0.4;
-    scr.up_downRatio = 0.7;
-    scr.focalLength = 300;
-
     render(m_dScreenTransformedCornerX,
            m_dScreenTransformedCornerY,
            m_dDstFromScreenTransformed,
-           &scr,
+           scr,
            m_dCornerSortedByDst);
+    cout << "Rendering..." << endl;
 
     //Fill every pixels left empty with black
     for(int i = 0; i < width_x_height; i++)

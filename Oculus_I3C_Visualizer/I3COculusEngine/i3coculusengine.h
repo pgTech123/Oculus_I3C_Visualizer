@@ -55,12 +55,11 @@ public:
     virtual ~I3COculusEngine();
     int openI3CFile(const char* filename);
     bool setImageSize(int width, int height);
-    void setFOV(float down, float up, float right, float left);
 
     void setRotation(double yaw, double pitch, double roll);
     void setPosition(double x, double y, double z);
 
-    void generateImage();
+    void generateImage(RenderingScreen *scr);
 
     unsigned char* getData();
 

@@ -22,7 +22,6 @@ public:
 
     /* Setters */
     void setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY, int iSideLenght);
-    void setFOV(float down, float up, float right, float left);
 
     void setAngles(float dAngleX, float dAngleY, float dAngleZ = 0);
     void setTranslation(float x ,float y, float z);

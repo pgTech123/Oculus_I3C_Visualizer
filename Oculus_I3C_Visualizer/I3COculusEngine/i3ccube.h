@@ -131,6 +131,7 @@ private:
     int* m_piImageHeight;
     unsigned char* m_pucImageData;
     unsigned char* m_pucPixelFilled;
+    int m_iTotalPixels;
 
     //Computing data
     Coordinate m_fArrSubcorners[27];

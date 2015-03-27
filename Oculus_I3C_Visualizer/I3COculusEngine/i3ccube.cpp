@@ -38,9 +38,9 @@ I3CCube::~I3CCube()
 }
 
 int I3CCube::setImageProperty(int* p_iImageWidth,
-                               int* p_iImageHeight,
-                               unsigned char* p_ucImageData,
-                               unsigned char* p_ucPixelFilled)
+                              int* p_iImageHeight,
+                              unsigned char* p_ucImageData,
+                              unsigned char* p_ucPixelFilled)
 {
     if(*p_iImageWidth > 0){
         m_piImageWidth = p_iImageWidth;
@@ -52,6 +52,7 @@ int I3CCube::setImageProperty(int* p_iImageWidth,
     }else{
         return ERR_BAD_HEIGHT_PTR;
     }
+    m_iTotalPixels = (*m_piImageWidth) * (*m_piImageHeight);
     if(p_ucImageData != NULL){
         m_pucImageData = p_ucImageData;
     }else{
@@ -285,20 +286,11 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
 
     BoundingRect bound = findBoundingRect(pixelCorners);
 
-    /*cout << "Down: " << down << endl;
-    cout << "Up: " << up << endl;
-    cout << "Y: " << bound.y << endl;
-    cout << "Height: " << bound.height << endl << endl;*/
-
     //Check if seen
     if(bound.y <= down || bound.y - bound.height > up){
         return;
     }
 
-    /*cout << "Left: " << left << endl;
-    cout << "Right: " << right << endl;
-    cout << "X: " << bound.x << endl;
-    cout << "Width: " << bound.width << endl << endl;*/
     if(bound.x + bound.width < left || bound.x >= right){
         return;
     }
@@ -322,12 +314,13 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
     // with no orientation relative to the screen.
     int fillingOrigin = bound.x - left + ((bound.y - down) * (*m_piImageWidth));
 
-    //cout << "FillingOrigin: " << fillingOrigin << endl;
-
-
     int imageIndex = fillingOrigin;
     for(int iY = 0; iY < bound.height; iY++){
         for(int iX = 0; iX < bound.width; iX++){
+            //Safety first :P
+            if(imageIndex >= m_iTotalPixels || imageIndex < 0){
+                return;
+            }
             if(m_pucPixelFilled[imageIndex] == 0){
                 //Write Pixel
                 m_pucImageData[imageIndex*3] = m_ucRed[cubeId];

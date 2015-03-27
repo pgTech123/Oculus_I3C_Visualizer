@@ -66,20 +66,6 @@ void Transform::setUnrotatedCornersCorners(int iCenterPointX, int iCenterPointY,
     }//*/
 }
 
-void Transform::setFOV(float down, float up, float right, float left)
-{
-    m_fFOVDown = down;
-    m_fFOVUp = up;
-    if(right < left){
-        m_fFOVIn = right;
-        m_fFOVOut = left;
-    }
-    else{
-        m_fFOVIn = left;
-        m_fFOVOut = right;
-    }
-}
-
 void Transform::computeTransform(float *dScreenTransformedCornerX,
                                  float *dScreenTransformedCornerY,
                                  float *dTransformedCornerZ)

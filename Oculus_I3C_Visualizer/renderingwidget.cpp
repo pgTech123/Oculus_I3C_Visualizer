@@ -63,9 +63,28 @@ void RenderingWidget::setFilename(const char* filename)
     m_filename = filename;
 }
 
-void RenderingWidget::setFOV(float down, float up, float right, float left)
+void RenderingWidget::setFOVLeft(float down, float up, float right, float left)
 {
-    m_I3COculusEngine->setFOV(down, up, right, left);
+    float sinDwn = sin(down);
+    float sinUp = sin(up);
+    float sinRight = sin(right);
+    float sinLeft = sin(left);
+
+    m_RenderingScrLeftEye.left_rightRatio = sinLeft / (sinRight + sinLeft);
+    m_RenderingScrLeftEye.up_downRatio = sinUp / (sinDwn + sinUp);
+    m_RenderingScrLeftEye.focalLength = FOCAL_LENGTH;
+}
+
+void RenderingWidget::setFOVRight(float down, float up, float right, float left)
+{
+    float sinDwn = sin(down);
+    float sinUp = sin(up);
+    float sinRight = sin(right);
+    float sinLeft = sin(left);
+
+    m_RenderingScrRightEye.left_rightRatio = sinLeft / (sinRight + sinLeft);
+    m_RenderingScrRightEye.up_downRatio = sinUp / (sinDwn + sinUp);
+    m_RenderingScrRightEye.focalLength = FOCAL_LENGTH;
 }
 
 bool RenderingWidget::launchOculusEngine()
@@ -86,7 +105,7 @@ void RenderingWidget::setRotation(double yaw, double pitch, double roll)
     //DEBUG
     /*cout << "yaw: "   << yaw << endl;
     cout << "pitch: " << pitch << endl;
-    cout << "roll: "  << roll  << endl;*/
+    cout << "roll: "  << roll  << endl;//*/
     m_I3COculusEngine->setRotation(-pitch, yaw, roll);
 }
 
@@ -96,7 +115,9 @@ void RenderingWidget::setLeftEyePosition(double x, double y, double z)
     /*cout << "LX: " << x << endl;
     cout << "LY: " << y << endl;
     cout << "LZ: " << z << endl;//*/
-    m_I3COculusEngine->setPosition(-x*1000, y*1000, z*1000);
+    m_I3COculusEngine->setPosition(-x * MULTIPLICATION_FACTOR,
+                                   y * MULTIPLICATION_FACTOR,
+                                   z * MULTIPLICATION_FACTOR);
 }
 
 void RenderingWidget::setRightEyePosition(double x, double y, double z)
@@ -104,12 +125,14 @@ void RenderingWidget::setRightEyePosition(double x, double y, double z)
     /*cout << "RX: " << x << endl;
     cout << "RY: " << y << endl;
     cout << "RZ: " << z << endl;*/
-    m_I3COculusEngine->setPosition(-x*1000, y*1000, z*1000);
+    m_I3COculusEngine->setPosition(-x * MULTIPLICATION_FACTOR,
+                                   y * MULTIPLICATION_FACTOR,
+                                   z * MULTIPLICATION_FACTOR);
 }
 
 void RenderingWidget::renderLeftEye()
 {
-    m_I3COculusEngine->generateImage();
+    m_I3COculusEngine->generateImage(&m_RenderingScrLeftEye);
 
     unsigned char *imageData = m_I3COculusEngine->getData();
 
@@ -123,7 +146,7 @@ void RenderingWidget::renderLeftEye()
 
 void RenderingWidget::renderRightEye()
 {
-    m_I3COculusEngine->generateImage();
+    m_I3COculusEngine->generateImage(&m_RenderingScrRightEye);
 
     unsigned char *imageData = m_I3COculusEngine->getData();
 

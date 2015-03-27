@@ -9,6 +9,7 @@
 #include <QHBoxLayout>
 #include <QImage>
 #include <QPixmap>
+#include <math.h>
 
 #include "I3COculusEngine/i3coculusengine.h"
 
@@ -16,6 +17,9 @@
 #include <iostream>
 using namespace std;
 // END DEBUG PURPOSE
+
+#define FOCAL_LENGTH            600
+#define MULTIPLICATION_FACTOR   600
 
 //TODO: on_escape_click -> close this window
 
@@ -28,7 +32,8 @@ public:
 
     void setScreenResolution(int width, int height);
     void setFilename(const char* filename);
-    void setFOV(float down, float up, float right, float left);
+    void setFOVLeft(float down, float up, float right, float left);
+    void setFOVRight(float down, float up, float right, float left);
 
     bool launchOculusEngine();
     void destroyOculusEngine();
@@ -47,6 +52,8 @@ public slots:
 
 private:
     I3COculusEngine *m_I3COculusEngine;
+    RenderingScreen m_RenderingScrLeftEye;
+    RenderingScreen m_RenderingScrRightEye;
 
     QHBoxLayout *m_HorizontalLayout;
     QLabel *m_LabelRight;
@@ -56,6 +63,11 @@ private:
     int m_iEyeHeight;
 
     const char *m_filename;
+
+    float m_FOV_IN;
+    float m_FOV_OUT;
+    float m_FOV_UP;
+    float m_FOV_DOWN;
 
 };
 
