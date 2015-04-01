@@ -30,7 +30,7 @@ int Oculus::initOculus()
     return OCULUS_NO_DEVICE_FOUND;
 }
 
-void Oculus::render(const char* filename)
+void Oculus::render(string filename)
 {
     //DO NOT ALLOW HAVE THIS THREAD RUNNING TWICE
     if(m_threadID == 0 && m_hmd)

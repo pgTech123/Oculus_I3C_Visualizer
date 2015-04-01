@@ -5,11 +5,11 @@
 #include "OVR_CAPI.h"
 #include "Kernel/OVR_Math.h"
 #include "renderingwidget.h"
-
-// DEBUG PURPOSE ONLY
+#include <string>
 #include <iostream>
+
 using namespace std;
-// END DEBUG PURPOSE
+
 
 //ERRORS DEFINITION
 #define OCULUS_NO_ERROR            0
@@ -40,7 +40,7 @@ public:
     virtual ~Oculus();
 
     int initOculus();
-    void render(const char* filename);
+    void render(string filename);
     void shutdownOculus();
 
 private:

@@ -11,7 +11,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
     m_Oculus = new Oculus();
 
-    m_Oculus->initOculus();
+    int error = m_Oculus->initOculus();
+    if(error == OCULUS_NO_ERROR){
+        m_bOculusFound = true;
+        ui->labelStatus->setText("Device Found");
+    }
+    else{
+        m_bOculusFound = false;
+        ui->labelStatus->setText("Device Not Found");
+    }
 }
 
 MainWindow::~MainWindow()
@@ -21,11 +29,40 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent*)
 {
-    m_Oculus->shutdownOculus();
+    if(m_bOculusFound){
+        m_Oculus->shutdownOculus();
+    }
     delete m_Oculus;
+}
+
+void MainWindow::on_refresh_clicked()
+{
+    if(m_bOculusFound){
+        m_Oculus->shutdownOculus();
+    }
+    int error = m_Oculus->initOculus();
+    if(error == OCULUS_NO_ERROR){
+        m_bOculusFound = true;
+        ui->labelStatus->setText("Device Found");
+    }
+    else{
+        m_bOculusFound = false;
+        ui->labelStatus->setText("Device Not Found");
+    }
+}
+
+void MainWindow::on_load_clicked()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Load 3D Image", QString(),
+                                                    "3D Image(*.i3c)");
+    if(path == NULL){   //Cancel Button Pressed
+        return;
+    }
+    ui->lineEditPath->setText(path);
 }
 
 void MainWindow::on_pushButtonGo_clicked()
 {
-    m_Oculus->render("./test.i3c");
+    string filePath = ui->lineEditPath->text().toStdString();
+    m_Oculus->render(filePath);
 }

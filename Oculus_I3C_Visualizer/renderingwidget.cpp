@@ -53,11 +53,11 @@ void RenderingWidget::setScreenResolution(int width, int height)
     this->showFullScreen();
 
     //Find a more appropriate place for this statement
-    m_I3COculusEngine->openI3CFile(m_filename);
+    m_I3COculusEngine->openI3CFile(m_filename.c_str());
 
 }
 
-void RenderingWidget::setFilename(const char* filename)
+void RenderingWidget::setFilename(string filename)
 {
     //We do not open file here as not in the same thread...
     m_filename = filename;

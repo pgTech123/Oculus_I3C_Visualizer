@@ -13,10 +13,11 @@
 
 #include "I3COculusEngine/i3coculusengine.h"
 
-// DEBUG PURPOSE ONLY
+
 #include <iostream>
+#include <string>
 using namespace std;
-// END DEBUG PURPOSE
+
 
 #define FOCAL_LENGTH            600
 #define MULTIPLICATION_FACTOR   600
@@ -31,7 +32,7 @@ public:
     virtual ~RenderingWidget();
 
     void setScreenResolution(int width, int height);
-    void setFilename(const char* filename);
+    void setFilename(string filename);
     void setFOVLeft(float down, float up, float right, float left);
     void setFOVRight(float down, float up, float right, float left);
 
@@ -62,7 +63,7 @@ private:
     int m_iEyeWidth;
     int m_iEyeHeight;
 
-    const char *m_filename;
+    string m_filename;
 
     float m_FOV_IN;
     float m_FOV_OUT;
