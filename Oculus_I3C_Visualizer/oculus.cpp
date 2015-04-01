@@ -21,12 +21,12 @@ int Oculus::initOculus()
                                         ovrTrackingCap_Position, 0);
 
         // DEBUG
-        cout <<"NO error" << endl;
+        //cout <<"NO error" << endl;
         return OCULUS_NO_ERROR;
     }
 
     // DEBUG
-    cout << "No device found" << endl;
+    //cout << "No device found" << endl;
     return OCULUS_NO_DEVICE_FOUND;
 }
 
@@ -72,16 +72,23 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
     renderingWidget->setScreenResolution(resolution.w, resolution.h);
 
     //Set the FOV for each eye:
-    ovrFovPort FOV = hmd->DefaultEyeFov[ovrEye_Left];
-    renderingWidget->setFOVLeft(FOV.DownTan, FOV.UpTan, FOV.RightTan, FOV.LeftTan);
-    FOV = hmd->DefaultEyeFov[ovrEye_Right];
-    renderingWidget->setFOVRight(FOV.DownTan, FOV.UpTan, FOV.RightTan, FOV.LeftTan);
+    ovrFovPort eyeFov[2];
+    eyeFov[0] = hmd->DefaultEyeFov[ovrEye_Left];
+    eyeFov[1] = hmd->DefaultEyeFov[ovrEye_Right];
+    renderingWidget->setFOVLeft(eyeFov[0].DownTan, eyeFov[0].UpTan, eyeFov[0].RightTan, eyeFov[0].LeftTan);
+    renderingWidget->setFOVRight(eyeFov[1].DownTan, eyeFov[1].UpTan, eyeFov[1].RightTan, eyeFov[1].LeftTan);
 
     // Oculus usefull variable
     ovrFrameTiming frameTiming;
     ovrEyeRenderDesc EyeRenderDesc[2];
+    EyeRenderDesc[0] = ovrHmd_GetRenderDesc(hmd, ovrEye_Left, eyeFov[0]);
+    EyeRenderDesc[1] = ovrHmd_GetRenderDesc(hmd, ovrEye_Right, eyeFov[1]);
     ovrVector3f eyeViewOffset[2] = {EyeRenderDesc[0].HmdToEyeViewOffset,
                                     EyeRenderDesc[1].HmdToEyeViewOffset};
+
+    // DEBUG
+    //cout << "offset R : " << eyeViewOffset[0].x  << ", "<< eyeViewOffset[0].y  << ", "<<eyeViewOffset[0].z <<endl;
+    //cout << "offset L : " << eyeViewOffset[1].x  << ", "<< eyeViewOffset[1].y  << ", "<<eyeViewOffset[1].z <<endl;
 
     //Rendering Loop
     while(hmd && !data->end)
@@ -123,21 +130,20 @@ void render(ovrHmd hmd, ovrVector3f eyeViewOffset[2],
         pose.Rotation.GetEulerAngles<Axis_Y, Axis_X, Axis_Z>(&yaw, &pitch, &roll);
 
         eye = hmd->EyeRenderOrder[eyeIndex];
-
         headPose = ovrHmd_GetHmdPosePerEye(hmd, eye);
 
         //Update rendering widget
         renderingWidget->setRotation(yaw, pitch, roll);
         if(eye == ovrEye_Left){
-            renderingWidget->setLeftEyePosition(headPose.Position.x + eyeViewOffset[eye].x,
-                                             headPose.Position.y + eyeViewOffset[eye].y,
-                                             headPose.Position.z + eyeViewOffset[eye].z);
+            renderingWidget->setLeftEyePosition(headPose.Position.x + eyeViewOffset[ovrEye_Left].x,
+                                                headPose.Position.y + eyeViewOffset[ovrEye_Left].y,
+                                                headPose.Position.z + eyeViewOffset[ovrEye_Left].z);
             renderingWidget->renderLeftEye();
         }
         else if(eye == ovrEye_Right){
-            renderingWidget->setRightEyePosition(headPose.Position.x + eyeViewOffset[eye].x,
-                                              headPose.Position.y + eyeViewOffset[eye].y,
-                                              headPose.Position.z + eyeViewOffset[eye].z);
+            renderingWidget->setRightEyePosition(headPose.Position.x + eyeViewOffset[ovrEye_Right].x,
+                                              headPose.Position.y + eyeViewOffset[ovrEye_Right].y,
+                                              headPose.Position.z + eyeViewOffset[ovrEye_Right].z);
             renderingWidget->renderRightEye();
         }
     }

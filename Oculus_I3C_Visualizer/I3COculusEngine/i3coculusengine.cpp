@@ -91,7 +91,6 @@ void I3COculusEngine::generateImage(RenderingScreen *scr)
            m_dDstFromScreenTransformed,
            scr,
            m_dCornerSortedByDst);
-    cout << "Rendering..." << endl;
 
     //Fill every pixels left empty with black
     for(int i = 0; i < width_x_height; i++)

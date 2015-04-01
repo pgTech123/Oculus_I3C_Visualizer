@@ -23,10 +23,10 @@ void RenderingWidget::setScreenResolution(int width, int height)
     m_iEyeWidth = width/2;
     m_iEyeHeight = height;
     if(m_I3COculusEngine->setImageSize(m_iEyeWidth, m_iEyeHeight)){
-        cout << "OK!" << endl;
+        //cout << "OK!" << endl;
     }
     else{
-        cout << "NOT OK :(" << endl;
+        //cout << "NOT OK :(" << endl;
         return;
     }
 
@@ -124,7 +124,7 @@ void RenderingWidget::setRightEyePosition(double x, double y, double z)
 {
     /*cout << "RX: " << x << endl;
     cout << "RY: " << y << endl;
-    cout << "RZ: " << z << endl;*/
+    cout << "RZ: " << z << endl;//*/
     m_I3COculusEngine->setPosition(-x * MULTIPLICATION_FACTOR,
                                    y * MULTIPLICATION_FACTOR,
                                    z * MULTIPLICATION_FACTOR);
