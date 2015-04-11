@@ -21,7 +21,6 @@ SOURCES += main.cpp\
     I3COculusEngine/i3coculusengine.cpp \
     I3COculusEngine/Utils/gvbinaryfunctions.cpp \
     I3COculusEngine/Utils/gvtransform.cpp \
-    I3COculusEngine/i3cindexcube.cpp \
     I3COculusEngine/i3ccube.cpp
 
 HEADERS  += mainwindow.h \
@@ -30,7 +29,6 @@ HEADERS  += mainwindow.h \
     I3COculusEngine/i3coculusengine.h \
     I3COculusEngine/Utils/gvbinaryfunctions.h \
     I3COculusEngine/Utils/gvtransform.h \
-    I3COculusEngine/i3cindexcube.h \
     I3COculusEngine/i3ccube.h
 
 FORMS    += mainwindow.ui

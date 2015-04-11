@@ -116,12 +116,12 @@ void Transform::getImageCenterPoint(int* centerPointX, int* centerPointY)
 void Transform::generateRotationMatrix()
 {
     /* Precomputation */
-    float cosAngleX = cos(m_dAngleX);
-    float sinAngleX = sin(m_dAngleX);
-    float cosAngleY = cos(m_dAngleY);
-    float sinAngleY = sin(m_dAngleY);
-    float cosAngleZ = cos(m_dAngleZ);
-    float sinAngleZ = sin(m_dAngleZ);
+    float cosAngleX = fastCos(m_dAngleX);
+    float sinAngleX = fastSin(m_dAngleX);
+    float cosAngleY = fastCos(m_dAngleY);
+    float sinAngleY = fastSin(m_dAngleY);
+    float cosAngleZ = fastCos(m_dAngleZ);
+    float sinAngleZ = fastSin(m_dAngleZ);
 
     float cosXSinY = cosAngleX * sinAngleY;
     float sinXSinY = sinAngleX * sinAngleY;
@@ -147,4 +147,33 @@ void Transform::generateRotationMatrix()
     m_dRotationMatrix[3][2] = 0;
     m_dRotationMatrix[3][3] = 1;
 
+}
+
+//WARNING: NO PROTECTION: VALUE MUST BETWEEN -2PI and 2PI.
+float Transform::fastSin(float x)
+{
+    //http://lab.polygonal.de/?p=205
+    float sin = 0;
+    if (x < -3.14159265){
+        x += 6.28318531;
+    }
+    else if (x >  3.14159265){
+        x -= 6.28318531;
+    }
+
+    //compute sine
+    if (x < 0){
+        sin = 1.27323954 * x + .405284735 * x * x;
+    }
+    else{
+        sin = 1.27323954 * x - 0.405284735 * x * x;
+    }
+
+    return sin;
+}
+
+//WARNING: NO PROTECTION: VALUE MUST BETWEEN -2PI and 2PI.
+float Transform::fastCos(float value)
+{
+    return fastSin(value + PI/2);
 }

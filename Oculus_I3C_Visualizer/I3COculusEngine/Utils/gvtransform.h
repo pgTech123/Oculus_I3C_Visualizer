@@ -35,6 +35,10 @@ public:
     /* Matrix Op */
     void generateRotationMatrix();
 
+    //WARNING SIN & COS: NO PROTECTION: VALUE MUST BETWEEN -2PI and 2PI.
+    float fastSin(float value);
+    float fastCos(float value);
+
 private:
     /* Angles */
     float m_dAngleX;
