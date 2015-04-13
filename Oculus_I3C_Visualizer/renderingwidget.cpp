@@ -22,6 +22,7 @@ void RenderingWidget::setScreenResolution(int width, int height)
 {
     m_iEyeWidth = width/2;
     m_iEyeHeight = height;
+    m_I3COculusEngine->setScreenPtr(&m_CurrentRenderingScreen);
     if(m_I3COculusEngine->setImageSize(m_iEyeWidth, m_iEyeHeight)){
         //cout << "OK!" << endl;
     }
@@ -43,7 +44,7 @@ void RenderingWidget::setScreenResolution(int width, int height)
     m_LabelLeft->setPixmap(leftPixmap);
 
     QPixmap rightPixmap(m_iEyeWidth,m_iEyeHeight);
-    rightPixmap.fill(Qt::red);
+    rightPixmap.fill(Qt::black);
     m_LabelRight->setPixmap(rightPixmap);
 
     m_HorizontalLayout->addWidget(m_LabelLeft);
@@ -72,6 +73,14 @@ void RenderingWidget::setFOVLeft(float down, float up, float right, float left)
 
     m_RenderingScrLeftEye.left_rightRatio = sinLeft / (sinRight + sinLeft);
     m_RenderingScrLeftEye.up_downRatio = sinUp / (sinDwn + sinUp);
+    m_RenderingScrLeftEye.up = (float)m_iEyeHeight * m_RenderingScrLeftEye.up_downRatio;
+    m_RenderingScrLeftEye.down = (float)m_iEyeHeight - m_RenderingScrLeftEye.up;
+    m_RenderingScrLeftEye.left = (float)m_iEyeWidth * m_RenderingScrLeftEye.left_rightRatio;
+    m_RenderingScrLeftEye.right = (float)m_iEyeWidth - m_RenderingScrLeftEye.left;
+
+    m_RenderingScrLeftEye.down = -m_RenderingScrLeftEye.down;
+    m_RenderingScrLeftEye.left = -m_RenderingScrLeftEye.left;
+
     m_RenderingScrLeftEye.focalLength = FOCAL_LENGTH;
 }
 
@@ -84,6 +93,14 @@ void RenderingWidget::setFOVRight(float down, float up, float right, float left)
 
     m_RenderingScrRightEye.left_rightRatio = sinLeft / (sinRight + sinLeft);
     m_RenderingScrRightEye.up_downRatio = sinUp / (sinDwn + sinUp);
+    m_RenderingScrRightEye.up = (float)m_iEyeHeight * m_RenderingScrRightEye.up_downRatio;
+    m_RenderingScrRightEye.down = (float)m_iEyeHeight - m_RenderingScrRightEye.up;
+    m_RenderingScrRightEye.left = (float)m_iEyeWidth * m_RenderingScrRightEye.left_rightRatio;
+    m_RenderingScrRightEye.right = (float)m_iEyeWidth - m_RenderingScrRightEye.left;
+
+    m_RenderingScrRightEye.down = -m_RenderingScrRightEye.down;
+    m_RenderingScrRightEye.left = -m_RenderingScrRightEye.left;
+
     m_RenderingScrRightEye.focalLength = FOCAL_LENGTH;
 }
 
@@ -132,7 +149,8 @@ void RenderingWidget::setRightEyePosition(double x, double y, double z)
 
 void RenderingWidget::renderLeftEye()
 {
-    m_I3COculusEngine->generateImage(&m_RenderingScrLeftEye);
+    m_CurrentRenderingScreen = m_RenderingScrLeftEye;
+    m_I3COculusEngine->generateImage();
 
     unsigned char *imageData = m_I3COculusEngine->getData();
 
@@ -146,7 +164,8 @@ void RenderingWidget::renderLeftEye()
 
 void RenderingWidget::renderRightEye()
 {
-    m_I3COculusEngine->generateImage(&m_RenderingScrRightEye);
+    m_CurrentRenderingScreen = m_RenderingScrRightEye;
+    m_I3COculusEngine->generateImage();
 
     unsigned char *imageData = m_I3COculusEngine->getData();
 

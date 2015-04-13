@@ -51,6 +51,11 @@ bool I3COculusEngine::setImageSize(int width, int height)
     return false;
 }
 
+void I3COculusEngine::setScreenPtr(RenderingScreen* screenPtr)
+{
+    m_pScreen = screenPtr;
+}
+
 void I3COculusEngine::setRotation(double yaw, double pitch, double roll)
 {
     m_Transform.setAngles(yaw, pitch, roll);
@@ -61,7 +66,7 @@ void I3COculusEngine::setPosition(double x, double y, double z)
     m_Transform.setTranslation(x, y, z);
 }
 
-void I3COculusEngine::generateImage(RenderingScreen *scr)
+void I3COculusEngine::generateImage()
 {
     int width_x_height = m_width * m_height;
     //Initialize every pixels as empty
@@ -89,7 +94,6 @@ void I3COculusEngine::generateImage(RenderingScreen *scr)
     render(m_dScreenTransformedCornerX,
            m_dScreenTransformedCornerY,
            m_dDstFromScreenTransformed,
-           scr,
            m_dCornerSortedByDst);
 
     //Fill every pixels left empty with black
@@ -222,9 +226,10 @@ int I3COculusEngine::readPixelCubes(fstream *file)
     {
         /* Create Cube */
         m_pGVImageArray[iCubeBeingWritten] = new I3CCube(&m_width,
-                                                             &m_height,
-                                                             &*m_pucData,
-                                                             &*m_pucPixelsFilled);
+                                                         &m_height,
+                                                         &*m_pucData,
+                                                         &*m_pucPixelsFilled,
+                                                         m_pScreen);
         iError = readMap(file, &ucMap, &iNumOfPixels);
         if(iError != NO_ERRORS){
             return iError;
@@ -281,9 +286,10 @@ int I3COculusEngine::readIndexCubes(fstream *file)
             else{
 
                 m_pGVImageArray[iCubeBeingWritten] = new I3CCube(&m_width,
-                                                                     &m_height,
-                                                                     &*m_pucData,
-                                                                     &*m_pucPixelsFilled);
+                                                                 &m_height,
+                                                                 &*m_pucData,
+                                                                 &*m_pucPixelsFilled,
+                                                                 m_pScreen);
 
                 m_pGVImageArray[iCubeBeingWritten]->addReferenceCube(ucMap,
                                                                      &m_pGVImageArray[iAddressCubesCursorOffset]);

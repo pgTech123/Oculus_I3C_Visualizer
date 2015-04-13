@@ -31,7 +31,7 @@ public:
     explicit RenderingWidget(QWidget *parent = 0);
     virtual ~RenderingWidget();
 
-    void setScreenResolution(int width, int height);
+    void setScreenResolution(int width, int height);    //WARNING: MUST BE CALLED BEFORE setFOV___()
     void setFilename(string filename);
     void setFOVLeft(float down, float up, float right, float left);
     void setFOVRight(float down, float up, float right, float left);
@@ -55,6 +55,7 @@ private:
     I3COculusEngine *m_I3COculusEngine;
     RenderingScreen m_RenderingScrLeftEye;
     RenderingScreen m_RenderingScrRightEye;
+    RenderingScreen m_CurrentRenderingScreen;
 
     QHBoxLayout *m_HorizontalLayout;
     QLabel *m_LabelRight;

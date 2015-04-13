@@ -15,10 +15,11 @@ I3CCube::I3CCube()
 I3CCube::I3CCube(int* p_iImageWidth,
                  int* p_iImageHeight,
                  unsigned char* p_ucImageData,
-                 unsigned char* p_ucPixelFilled)
+                 unsigned char* p_ucPixelFilled,
+                 RenderingScreen* p_screen)
 {
     initializeCube();
-    setImageProperty(p_iImageWidth, p_iImageHeight, p_ucImageData, p_ucPixelFilled);
+    setImageProperty(p_iImageWidth, p_iImageHeight, p_ucImageData, p_ucPixelFilled, p_screen);
 }
 
 I3CCube::~I3CCube()
@@ -40,7 +41,8 @@ I3CCube::~I3CCube()
 int I3CCube::setImageProperty(int* p_iImageWidth,
                               int* p_iImageHeight,
                               unsigned char* p_ucImageData,
-                              unsigned char* p_ucPixelFilled)
+                              unsigned char* p_ucPixelFilled,
+                              RenderingScreen* p_screen)
 {
     if(*p_iImageWidth > 0){
         m_piImageWidth = p_iImageWidth;
@@ -62,6 +64,11 @@ int I3CCube::setImageProperty(int* p_iImageWidth,
         m_pucPixelFilled = p_ucPixelFilled;
     }else{
         return ERR_NULL_FILLED_PX_PTR;
+    }
+    if(p_screen != NULL){
+        m_pScreen = p_screen;
+    }else{
+        return ERR_NULL_SCREEN;
     }
     return NO_ERR;
 }
@@ -117,7 +124,6 @@ void I3CCube::addReferenceCube(unsigned char ucMap, I3CCube** p_ChildCubeRef)
 void I3CCube::render(float iArrPosX[8],
                      float iArrPosY[8],
                      float iArrPosZ[8],
-                     RenderingScreen *renderingScreen,
                      unsigned char ucSortedByDstFromScreen[8])
 {
     //Convert Pos to coodinates
@@ -127,19 +133,18 @@ void I3CCube::render(float iArrPosX[8],
         coord[i].y = iArrPosY[i];
         coord[i].z = iArrPosZ[i];
     }
-    render(coord, renderingScreen, ucSortedByDstFromScreen);
+    render(coord, ucSortedByDstFromScreen);
 }
 
 void I3CCube::render(Coordinate iArrPos[8],
-                     RenderingScreen *renderingScreen,
                      unsigned char ucSortedByDstFromScreen[8])
 {
     // Render cubes accordingly to their level
     if(m_iHierarchyLevel > 0){
-        renderReference(iArrPos, renderingScreen, ucSortedByDstFromScreen);
+        renderReference(iArrPos, ucSortedByDstFromScreen);
     }
     else{
-        renderPixels(iArrPos, renderingScreen, ucSortedByDstFromScreen);
+        renderPixels(iArrPos, ucSortedByDstFromScreen);
     }
 }
 
@@ -159,7 +164,6 @@ void I3CCube::initializeCube()
 
 
 void I3CCube::renderReference(Coordinate iArrPos[8],
-                              RenderingScreen *renderingScreen,
                               unsigned char ucSortedByDstFromScreen[8])
 {
     //Fill outter corners
@@ -172,29 +176,21 @@ void I3CCube::renderReference(Coordinate iArrPos[8],
     for(int i = 0; i < 8; i ++){
         if((m_ucMap & (0x01 << ucSortedByDstFromScreen[i]))){
             renderChildIfZPositive(ucSortedByDstFromScreen[i],
-                                   renderingScreen,
                                    ucSortedByDstFromScreen);
         }
     }
 }
 
 void I3CCube::renderPixels(Coordinate iArrPos[8],
-                           RenderingScreen *renderingScreen,
                            unsigned char ucSortedByDstFromScreen[8])
 {
-    //Rendering screen dimentions
-    int pixelsUp = (float)(*m_piImageHeight) * (*renderingScreen).up_downRatio;
-    int pixelsDown = (*m_piImageHeight) - pixelsUp;
-    int pixelsLeft = (float)(*m_piImageWidth) * (*renderingScreen).left_rightRatio;
-    int pixelsRight = (*m_piImageWidth) - pixelsLeft;
-
     //Here, m_fArrSubcorners is used to represent the screen coordinate
     //so the "z" coordinate is not used.
     //We compute the perspective: Focal Length * (X or Y) / Z
     int outterCornersIndex[8] = {0, 2, 20, 18, 6, 8, 26, 24};
     for(int i = 0; i < 8; i++){
-        m_fArrSubcorners[outterCornersIndex[i]].x = (iArrPos[i].x * renderingScreen->focalLength) / iArrPos[i].z;
-        m_fArrSubcorners[outterCornersIndex[i]].y = (iArrPos[i].y * renderingScreen->focalLength) / iArrPos[i].z;
+        m_fArrSubcorners[outterCornersIndex[i]].x = (iArrPos[i].x * m_pScreen->focalLength) / iArrPos[i].z;
+        m_fArrSubcorners[outterCornersIndex[i]].y = (iArrPos[i].y * m_pScreen->focalLength) / iArrPos[i].z;
         m_fArrSubcorners[outterCornersIndex[i]].z = 0;
     }
 
@@ -203,7 +199,7 @@ void I3CCube::renderPixels(Coordinate iArrPos[8],
     //Draw
     for(int i = 0; i < 8; i ++){
         if((m_ucMap & (0x01 << ucSortedByDstFromScreen[i]))){
-            tryToDrawPixel(pixelsUp, pixelsDown, pixelsLeft, pixelsRight,
+            tryToDrawPixel(m_pScreen->up, m_pScreen->down, m_pScreen->left, m_pScreen->right,
                            ucSortedByDstFromScreen[i]);
         }
     }
@@ -236,7 +232,6 @@ void I3CCube::computeSubcorners()
 }
 
 void I3CCube::renderChildIfZPositive(unsigned char cubeId,
-                                     RenderingScreen *renderingScreen,
                                      unsigned char ucSortedByDstFromScreen[8])
 {
     int childBaseCorner[8] = {0, 1, 10, 9, 3, 4, 13, 12};
@@ -259,9 +254,10 @@ void I3CCube::renderChildIfZPositive(unsigned char cubeId,
         return; //All negative: stop rendering this branch
     }
 
-    //TODO: Check zone covered by pixels already rendered: see if could improve performance???
-
-    m_pArrChildCubes[cubeId]->render(childCorners, renderingScreen, ucSortedByDstFromScreen);
+    //This implementation suppose that most pixels are hidden on one frame
+    if(!childIsHidden(childCorners)){
+        m_pArrChildCubes[cubeId]->render(childCorners, ucSortedByDstFromScreen);
+    }
 }
 
 void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
@@ -269,10 +265,6 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
 {
     int childBaseCorner[8] = {0, 1, 10, 9, 3, 4, 13, 12};
     Coordinate pixelCorners[8];
-
-    //Adjustment
-    down = -down;
-    left = -left;
 
     //TODO: MODIFY
     pixelCorners[0] = m_fArrSubcorners[childBaseCorner[cubeId]];
@@ -347,23 +339,31 @@ BoundingRect I3CCube::findBoundingRect(Coordinate corners[8])
 
     for(int i = 0; i < 8; i++){
         if(corners[i].x < lowerValueX){
-            lowerValueX = corners[i].x;
+            lowerValueX = (int)corners[i].x;
         }
         if(corners[i].y < lowerValueY){
-            lowerValueY = corners[i].y;
+            lowerValueY = (int)corners[i].y;
         }
         if(corners[i].x > higherValueX){
-            higherValueX = corners[i].x;
+            higherValueX = (int)corners[i].x;
         }
         if(corners[i].y > higherValueY){
-            higherValueY = corners[i].y;
+            higherValueY = (int)corners[i].y;
         }
     }
 
-    bounding.x = corners[0].x;
-    bounding.y = corners[0].y;
+    bounding.x = (int)corners[0].x;
+    bounding.y = (int)corners[0].y;
     bounding.width = higherValueX - lowerValueX;
     bounding.height = higherValueY - lowerValueY;
 
     return bounding;
+}
+
+bool I3CCube::childIsHidden(Coordinate childCorners[8])
+{
+    if(true){
+        return false;
+    }
+    return true;
 }

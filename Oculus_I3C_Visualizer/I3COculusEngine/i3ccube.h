@@ -7,6 +7,7 @@
 #define ERR_BAD_HEIGHT_PTR      501
 #define ERR_NULL_IMG_PTR        502
 #define ERR_NULL_FILLED_PX_PTR  503
+#define ERR_NULL_SCREEN         504
 
 
 #include <iostream>
@@ -39,6 +40,15 @@ typedef struct{
     float up_downRatio;
     //Left/Right Ratio
     float left_rightRatio;
+
+    int up;
+    int down;
+    int left;
+    int right;
+
+    int lenseCenterX;
+    int lenseCenterY;
+
     float focalLength;
 }RenderingScreen;
 
@@ -63,14 +73,16 @@ public:
     I3CCube(int* p_iImageWidth,
             int* p_iImageHeight,
             unsigned char* p_ucImageData,
-            unsigned char* p_ucPixelFilled);
+            unsigned char* p_ucPixelFilled,
+            RenderingScreen* p_screen);
     virtual ~I3CCube();
 
     //Accessors
     int setImageProperty(int* p_iImageWidth,
                          int* p_iImageHeight,
                          unsigned char* p_ucImageData,
-                         unsigned char* p_ucPixelFilled);
+                         unsigned char* p_ucPixelFilled,
+                         RenderingScreen* p_screen);
     int getHierarchyLevel();
 
     //Image
@@ -81,11 +93,9 @@ public:
     void render(float iArrPosX[8],
                 float iArrPosY[8],
                 float iArrPosZ[8],
-                RenderingScreen *renderingScreen,
                 unsigned char ucSortedByDstFromScreen[8]);
 
     void render(Coordinate iArrPos[8],
-                RenderingScreen *renderingScreen,
                 unsigned char ucSortedByDstFromScreen[8]);
 
 private:
@@ -95,23 +105,22 @@ private:
 
     //Rendering
     void renderReference(Coordinate iArrPos[8],
-                         RenderingScreen *renderingScreen,
                          unsigned char ucSortedByDstFromScreen[8]);
 
     void renderPixels(Coordinate iArrPos[8],
-                      RenderingScreen *renderingScreen,
                       unsigned char ucSortedByDstFromScreen[8]);
 
     void computeSubcorners();
 
     void renderChildIfZPositive(unsigned char cubeId,
-                                RenderingScreen *renderingScreen,
                                 unsigned char ucSortedByDstFromScreen[8]);
 
     void tryToDrawPixel(int up, int down, int left, int right,
                         unsigned char cubeId);
 
     BoundingRect findBoundingRect(Coordinate corners[8]);
+
+    bool childIsHidden(Coordinate childCorners[8]);
 
 private:
     //Hierarchy level
@@ -135,6 +144,9 @@ private:
 
     //Computing data
     Coordinate m_fArrSubcorners[27];
+
+    //Screen
+    RenderingScreen* m_pScreen;
 };
 
 #endif // I3CCUBE_H

@@ -69,7 +69,7 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
     RenderingWidget *renderingWidget = (RenderingWidget*)data->p_renderingWidget;
     renderingWidget->launchOculusEngine();
     ovrSizei resolution = hmd->Resolution;
-    renderingWidget->setScreenResolution(resolution.w, resolution.h);
+    renderingWidget->setScreenResolution(resolution.w, resolution.h);   //MUST BE CALLED BEFORE SETTING FOV
 
     //Set the FOV for each eye:
     ovrFovPort eyeFov[2];

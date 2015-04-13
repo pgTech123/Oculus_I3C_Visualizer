@@ -55,11 +55,12 @@ public:
     virtual ~I3COculusEngine();
     int openI3CFile(const char* filename);
     bool setImageSize(int width, int height);
+    void setScreenPtr(RenderingScreen* screenPtr);
 
     void setRotation(double yaw, double pitch, double roll);
     void setPosition(double x, double y, double z);
 
-    void generateImage(RenderingScreen *scr);
+    void generateImage();
 
     unsigned char* getData();
 
@@ -84,6 +85,7 @@ private:
     int* m_iArrCubeAtLevel;
     int m_iTotalNumberOfCubes;
     I3CCube** m_pGVImageArray;
+    RenderingScreen* m_pScreen;
 
     int m_width;
     int m_height;
