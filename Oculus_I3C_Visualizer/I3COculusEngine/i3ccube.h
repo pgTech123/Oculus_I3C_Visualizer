@@ -25,7 +25,6 @@ public:
     float z;
 
     void fromMidCoord(Coordinate coord1, Coordinate coord2);
-    void fromMidCoordXYOnly(Coordinate coord1, Coordinate coord2);
 };
 
 typedef struct{
@@ -112,7 +111,6 @@ private:
                       unsigned char ucSortedByDstFromScreen[8]);
 
     void computeSubcorners();
-    void computeSubcornersXY_Only();
 
     void renderChildIfZPositive(unsigned char cubeId,
                                 unsigned char ucSortedByDstFromScreen[8]);

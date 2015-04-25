@@ -9,7 +9,6 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setFixedWidth(400);
     this->setFixedHeight(200);
 
-    //Try to find Oculus device
     m_Oculus = new Oculus();
     initOculus();
 }
@@ -17,7 +16,6 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete m_Oculus;
 }
 
 void MainWindow::closeEvent(QCloseEvent*)
@@ -25,9 +23,10 @@ void MainWindow::closeEvent(QCloseEvent*)
     if(m_bOculusFound){
         m_Oculus->shutdownOculus();
     }
+    delete m_Oculus;
 }
 
-//Warning: |initOculus| must be called at least once before destructor is called
+//Warning: Must be called at least once in the execution
 void MainWindow::initOculus()
 {
     int error = m_Oculus->initOculus();

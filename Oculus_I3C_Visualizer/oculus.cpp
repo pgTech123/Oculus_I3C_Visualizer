@@ -7,7 +7,7 @@ Oculus::Oculus()
 
 Oculus::~Oculus()
 {
-    cout << "Oculus deleted" << endl;
+    //If not shutdown, shutdown
 }
 
 int Oculus::initOculus()
@@ -31,7 +31,7 @@ int Oculus::initOculus()
 
 void Oculus::render(string filename)
 {
-    //***DO NOT ALLOW HAVE THIS THREAD RUNNING TWICE***
+    //DO NOT ALLOW HAVE THIS THREAD RUNNING TWICE
     if(m_threadID == 0 && m_hmd)
     {
         //Creation of the rendering window
@@ -49,27 +49,22 @@ void Oculus::render(string filename)
 
 void Oculus::shutdownOculus()
 {
-    //The thread has a reference to |data.end| so when true -> calls end of loop
+    //The loop in the thread has a reference to |data.end| and will stop when true
     data.end = true;
 
-    //We suppose that a loop should not last more than 1000ms.
-    //Reliability can be improved by modifying how shutdown is done here.
+    //We consider that a loop should not last more than 200ms.
+    //This part of code could be improved to get better reliablity.
     Sleep(200);
+
     if(m_threadID != 0){
         CloseHandle(m_threadHandle);
         m_threadID = 0;
         delete m_RenderingWidget;
     }
 
-    cout << "1..." << endl;
-    if(m_hmd){
-        cout << "2..." << endl;
-        ovrHmd_Destroy(m_hmd);
-        cout << "3..." << endl;
-    }
-    cout << "4..." << endl;
+    //Shutdown Oculus SDK
+    ovrHmd_Destroy(m_hmd);
     ovr_Shutdown();
-    cout << "5..." << endl;
 }
 
 DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
@@ -79,11 +74,10 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
     ovrHmd hmd = *(ovrHmd*)data->hmd;
     RenderingWidget *renderingWidget = (RenderingWidget*)data->p_renderingWidget;
 
-    //Initialise |RenderingWidget|
+    //Setup rendering widget
     renderingWidget->launchOculusEngine();
     ovrSizei resolution = hmd->Resolution;
-    //Warning: |setScreenResolution| must be called before setting FOV(no protection)
-    renderingWidget->setScreenResolution(resolution.w, resolution.h);
+    renderingWidget->setScreenResolution(resolution.w, resolution.h);   //MUST BE CALLED BEFORE SETTING FOV
 
     //Set the FOV for each eye:
     ovrFovPort eyeFov[2];
@@ -117,8 +111,7 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
         }
     }
 
-    renderingWidget->destroyOculusEngine(); //Must be done within the thread...
-
+    renderingWidget->destroyOculusEngine();//Must be called within the thread
     // DEBUG
     cout << "out" << endl;
     return 0;
@@ -149,7 +142,7 @@ void render(ovrHmd hmd, ovrVector3f eyeViewOffset[2],
         //Update rendering widget
         renderingWidget->setRotation(yaw, pitch, roll);
 
-        //Actual call to for rendering the appropriate eye
+        //Actual rendering
         if(eye == ovrEye_Left){
             renderingWidget->setLeftEyePosition(headPose.Position.x + eyeViewOffset[ovrEye_Left].x,
                                                 headPose.Position.y + eyeViewOffset[ovrEye_Left].y,

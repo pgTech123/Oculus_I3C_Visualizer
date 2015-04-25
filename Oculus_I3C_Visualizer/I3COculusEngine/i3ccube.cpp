@@ -7,12 +7,6 @@ void Coordinate::fromMidCoord(Coordinate coord1, Coordinate coord2)
     this->z = (coord1.z + coord2.z) / 2;
 }
 
-void Coordinate::fromMidCoordXYOnly(Coordinate coord1, Coordinate coord2)
-{
-    this->x = (coord1.x + coord2.x) / 2;
-    this->y = (coord1.y + coord2.y) / 2;
-}
-
 I3CCube::I3CCube()
 {
     initializeCube();
@@ -73,9 +67,7 @@ int I3CCube::setImageProperty(int* p_iImageWidth,
     }
     if(p_screen != NULL){
         m_pScreen = p_screen;
-        //cout << m_pScreen << endl;
     }else{
-        //cout << "ERROR p_Screen" << endl;
         return ERR_NULL_SCREEN;
     }
     return NO_ERR;
@@ -199,9 +191,10 @@ void I3CCube::renderPixels(Coordinate iArrPos[8],
     for(int i = 0; i < 8; i++){
         m_fArrSubcorners[outterCornersIndex[i]].x = (iArrPos[i].x * m_pScreen->focalLength) / iArrPos[i].z;
         m_fArrSubcorners[outterCornersIndex[i]].y = (iArrPos[i].y * m_pScreen->focalLength) / iArrPos[i].z;
+        m_fArrSubcorners[outterCornersIndex[i]].z = 0;
     }
 
-    computeSubcornersXY_Only();
+    computeSubcorners();    //Where "Z" will always be 0
 
     //Draw
     for(int i = 0; i < 8; i ++){
@@ -236,32 +229,6 @@ void I3CCube::computeSubcorners()
     int computeFrom[1][2] = {{10,16}};
     m_fArrSubcorners[cubeCenter[0]].fromMidCoord(m_fArrSubcorners[computeFrom[0][0]],
                                                  m_fArrSubcorners[computeFrom[0][1]]);
-}
-
-void I3CCube::computeSubcornersXY_Only()
-{
-    //Compute Mid
-    int midCornersIndex[12] = {1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25};
-    int computeMidWith[12][2] = {{0,2}, {0,6}, {2,8}, {6,8}, {0,18}, {2,20},
-                                 {6,24}, {8,26}, {18,20}, {18,24}, {20,26}, {24,26}};
-    for(int i = 0; i < 12; i++){
-        m_fArrSubcorners[midCornersIndex[i]].fromMidCoordXYOnly(m_fArrSubcorners[computeMidWith[i][0]],
-                                                                m_fArrSubcorners[computeMidWith[i][1]]);
-    }
-
-    //Compute mid face
-    int midFacesIndex[6] = {4, 10, 12, 14, 16, 22};
-    int computeMidFaceWith[6][2] = {{1,7}, {1,19}, {3,21}, {5,23}, {15,17}, {19,25}};
-    for(int i = 0; i < 6; i++){
-        m_fArrSubcorners[midFacesIndex[i]].fromMidCoordXYOnly(m_fArrSubcorners[computeMidFaceWith[i][0]],
-                                                              m_fArrSubcorners[computeMidFaceWith[i][1]]);
-    }
-
-    //Compute center
-    int cubeCenter[1] = {13};
-    int computeFrom[1][2] = {{10,16}};
-    m_fArrSubcorners[cubeCenter[0]].fromMidCoordXYOnly(m_fArrSubcorners[computeFrom[0][0]],
-                                                       m_fArrSubcorners[computeFrom[0][1]]);
 }
 
 void I3CCube::renderChildIfZPositive(unsigned char cubeId,
@@ -299,7 +266,7 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
     int childBaseCorner[8] = {0, 1, 10, 9, 3, 4, 13, 12};
     Coordinate pixelCorners[8];
 
-    //TODO: MODIFY FOR A LOOP
+    //TODO: MODIFY
     pixelCorners[0] = m_fArrSubcorners[childBaseCorner[cubeId]];
     pixelCorners[1] = m_fArrSubcorners[childBaseCorner[cubeId]+1];
     pixelCorners[2] = m_fArrSubcorners[childBaseCorner[cubeId]+10];
@@ -312,13 +279,11 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
     BoundingRect bound = findBoundingRect(pixelCorners);
 
     //Check if seen
-    int boundDown = bound.y - bound.height;
-    int boundRight = bound.x + bound.width;
-    if(bound.y <= down || boundDown > up){
+    if(bound.y <= down || bound.y - bound.height > up){
         return;
     }
 
-    if(boundRight < left || bound.x >= right){
+    if(bound.x + bound.width < left || bound.x >= right){
         return;
     }
 
@@ -326,13 +291,13 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
     if(bound.y > up){
         bound.y = up;
     }
-    if(boundDown < down){
+    if(bound.y - bound.height < down){
         bound.height = bound.y - down;
     }
     if(bound.x < left){
         bound.x = left;
     }
-    if(boundRight > right){
+    if(bound.x + bound.width > right){
         bound.width = right - bound.x;
     }
 
@@ -345,9 +310,9 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
     for(int iY = 0; iY < bound.height; iY++){
         for(int iX = 0; iX < bound.width; iX++){
             //Safety first :P
-            /*if(imageIndex >= m_iTotalPixels || imageIndex < 0){
+            if(imageIndex >= m_iTotalPixels || imageIndex < 0){
                 return;
-            }*/
+            }
             if(m_pucPixelFilled[imageIndex] == 0){
                 //Write Pixel
                 m_pucImageData[imageIndex*3] = m_ucRed[cubeId];
@@ -364,7 +329,6 @@ void I3CCube::tryToDrawPixel(int up, int down, int left, int right,
     //FUTUR: implement linear interpolation with alpha...
 }
 
-//Make this function procedural
 BoundingRect I3CCube::findBoundingRect(Coordinate corners[8])
 {
     int lowerValueX = 1000000;
@@ -398,58 +362,8 @@ BoundingRect I3CCube::findBoundingRect(Coordinate corners[8])
 
 bool I3CCube::childIsHidden(Coordinate childCorners[8])
 {
-    //MAJOR BUG: Cannot access m_pScreen ...
-    //cout << m_pScreen << endl;
-    /*Coordinate cornersProjected[8];
-    for(int i = 0; i < 8; i++){
-        //TODO: 600 should be |m_pScreen->focalLength|
-        cornersProjected[i].x = ((float)childCorners[i].x * m_pScreen->focalLength) / (float)childCorners[i].z;
-        cornersProjected[i].y = ((float)childCorners[i].y * m_pScreen->focalLength) / (float)childCorners[i].z;
+    if(true){
+        return false;
     }
-
-    //cout << cornersProjected[0].x << endl;
-
-    BoundingRect bound = findBoundingRect(cornersProjected);
-    //Check if seen
-    int boundDown = bound.y - bound.height;
-    int boundRight = bound.x + bound.width;
-    if(bound.y <= m_pScreen->down || boundDown > m_pScreen->up){
-        return true;
-    }
-
-    if(boundRight < m_pScreen->left || bound.x >= m_pScreen->right){
-        return true;
-    }
-
-    //Crop only what is seen
-    if(bound.y > m_pScreen->up){
-        bound.y = m_pScreen->up;
-    }
-    if(boundDown < m_pScreen->down){
-        bound.height = bound.y - m_pScreen->down;
-    }
-    if(bound.x < m_pScreen->left){
-        bound.x = m_pScreen->left;
-    }
-    if(boundRight > m_pScreen->right){
-        bound.width = m_pScreen->right - bound.x;
-    }
-
-    // As we don't expect the pixels to be seen (from too close),
-    // it seems appropriate to approximate a 3D pixel as a square
-    // with no orientation relative to the screen.
-    int fillingOrigin = bound.x - m_pScreen->left + ((bound.y - m_pScreen->down) * (*m_piImageWidth));
-
-    int imageIndex = fillingOrigin;
-    for(int iY = 0; iY < bound.height; iY++){
-        for(int iX = 0; iX < bound.width; iX++){
-            if(m_pucPixelFilled[imageIndex] != 0){
-                return false;
-            }
-            imageIndex ++;
-        }
-        imageIndex = fillingOrigin + (*m_piImageWidth);
-    }
-    return true;*/
-    return false;
+    return true;
 }

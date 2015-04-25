@@ -1,11 +1,10 @@
 #ifndef RENDERINGWIDGET_H
 #define RENDERINGWIDGET_H
 
-#include <QGLWidget>
+#include <QWidget>
 #include <QDesktopWidget>
 #include <QApplication>
 #include <QRect>
-#include <QPainter>
 #include <QLabel>
 #include <QHBoxLayout>
 #include <QImage>
@@ -25,7 +24,7 @@ using namespace std;
 
 //TODO: on_escape_click -> close this window
 
-class RenderingWidget : public QGLWidget
+class RenderingWidget : public QWidget
 {
     Q_OBJECT
 public:
@@ -48,11 +47,6 @@ public:
     void renderLeftEye();
     void renderRightEye();
 
-protected:
-    void initializeGL();
-    void resizeGL();
-    void paintGL();
-
 signals:
 
 public slots:
@@ -63,10 +57,9 @@ private:
     RenderingScreen m_RenderingScrRightEye;
     RenderingScreen m_CurrentRenderingScreen;
 
-    /*QHBoxLayout *m_HorizontalLayout;
+    QHBoxLayout *m_HorizontalLayout;
     QLabel *m_LabelRight;
-    QLabel *m_LabelLeft;*/
-    //unsigned char *m_pucLastImgRendered;
+    QLabel *m_LabelLeft;
 
     int m_iEyeWidth;
     int m_iEyeHeight;

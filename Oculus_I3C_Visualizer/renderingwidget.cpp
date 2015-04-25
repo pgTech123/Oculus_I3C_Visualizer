@@ -1,28 +1,21 @@
 #include "renderingwidget.h"
 
 RenderingWidget::RenderingWidget(QWidget *parent) :
-    QGLWidget(parent)
+    QWidget(parent)
 {
     //Must be done here cause and in destructor cause other calls are not in the
     //same thread
-   /* m_LabelRight = new QLabel();    //TO REMOVE
-    m_LabelLeft = new QLabel();     //TO REMOVE
-    m_HorizontalLayout = new QHBoxLayout();     //TO REMOVE*/
+    m_LabelRight = new QLabel();
+    m_LabelLeft = new QLabel();
+    m_HorizontalLayout = new QHBoxLayout();
     this->show();
 }
 
 RenderingWidget::~RenderingWidget()
 {
-    /*delete m_LabelLeft;
+    delete m_LabelLeft;
     delete m_LabelRight;
-    delete m_HorizontalLayout;//*/
-}
-
-bool RenderingWidget::launchOculusEngine()
-{
-    m_I3COculusEngine = new I3COculusEngine();
-    //TODO: Make this function safe
-    return true;
+    delete m_HorizontalLayout;
 }
 
 void RenderingWidget::setScreenResolution(int width, int height)
@@ -43,7 +36,7 @@ void RenderingWidget::setScreenResolution(int width, int height)
     QRect screenres = QApplication::desktop()->screenGeometry(1);
     this->move(QPoint(screenres.x(), screenres.y()));
 
-    /*m_LabelRight->setFixedSize(m_iEyeWidth, m_iEyeHeight);
+    m_LabelRight->setFixedSize(m_iEyeWidth, m_iEyeHeight);
     m_LabelLeft->setFixedSize(m_iEyeWidth, m_iEyeHeight);
 
     QPixmap leftPixmap(m_iEyeWidth,m_iEyeHeight);
@@ -56,7 +49,7 @@ void RenderingWidget::setScreenResolution(int width, int height)
 
     m_HorizontalLayout->addWidget(m_LabelLeft);
     m_HorizontalLayout->addWidget(m_LabelRight);
-    this->setLayout(m_HorizontalLayout);*/
+    this->setLayout(m_HorizontalLayout);
 
     this->showFullScreen();
 
@@ -111,6 +104,13 @@ void RenderingWidget::setFOVRight(float down, float up, float right, float left)
     m_RenderingScrRightEye.focalLength = FOCAL_LENGTH;
 }
 
+bool RenderingWidget::launchOculusEngine()
+{
+    m_I3COculusEngine = new I3COculusEngine();
+    //TODO: Make this function safe
+    return true;
+}
+
 void RenderingWidget::destroyOculusEngine()
 {
     //TODO: make this function safe
@@ -129,9 +129,9 @@ void RenderingWidget::setRotation(double yaw, double pitch, double roll)
 
 void RenderingWidget::setLeftEyePosition(double x, double y, double z)
 {
-    cout << "LX: " << x << endl;
+    /*cout << "LX: " << x << endl;
     cout << "LY: " << y << endl;
-    cout << "LZ: " << z << endl;//
+    cout << "LZ: " << z << endl;//*/
     m_I3COculusEngine->setPosition(-x * MULTIPLICATION_FACTOR,
                                    y * MULTIPLICATION_FACTOR,
                                    z * MULTIPLICATION_FACTOR);
@@ -150,51 +150,30 @@ void RenderingWidget::setRightEyePosition(double x, double y, double z)
 void RenderingWidget::renderLeftEye()
 {
     m_CurrentRenderingScreen = m_RenderingScrLeftEye;
-    //m_I3COculusEngine->generateImage();
+    m_I3COculusEngine->generateImage();
 
-    //unsigned char *imageData = m_I3COculusEngine->getData();
-
-    //For optimisation: this can be refactored so that this
-    //loop is done at the same time as the image is rendered.
-
-
+    unsigned char *imageData = m_I3COculusEngine->getData();
 
     // 2 pixels width, 2 pixels height, 6 bytes per line, RGB888 format
-    /*QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888);
+    QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888);
     QPixmap pix = QPixmap::fromImage(img); // Create pixmap from image
-*/
+
     // Set the this Class as the Pixel Map of the Rendered Image
-    //m_LabelRight->setPixmap(pix);
+    m_LabelRight->setPixmap(pix);
 }
 
 void RenderingWidget::renderRightEye()
 {
     m_CurrentRenderingScreen = m_RenderingScrRightEye;
-    //m_I3COculusEngine->generateImage();
+    m_I3COculusEngine->generateImage();
 
-    //unsigned char *imageData = m_I3COculusEngine->getData();
-
-
+    unsigned char *imageData = m_I3COculusEngine->getData();
 
     // 2 pixels width, 2 pixels height, 6 bytes per line, RGB888 format
-    /*QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888);
+    QImage img(imageData, m_iEyeWidth, m_iEyeHeight, 3*m_iEyeWidth, QImage::Format_RGB888);
     QPixmap pix = QPixmap::fromImage(img); // Create pixmap from image
-*/
+
     // Set the this Class as the Pixel Map of the Rendered Image
-    //m_LabelLeft->setPixmap(pix);
+    m_LabelLeft->setPixmap(pix);
 }
 
-void RenderingWidget::initializeGL()
-{
-
-}
-
-void RenderingWidget::resizeGL()
-{
-
-}
-
-void RenderingWidget::paintGL()
-{
-
-}
