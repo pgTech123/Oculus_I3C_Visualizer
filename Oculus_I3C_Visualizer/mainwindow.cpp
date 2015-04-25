@@ -9,22 +9,15 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setFixedWidth(400);
     this->setFixedHeight(200);
 
+    //Try to find Oculus device
     m_Oculus = new Oculus();
-
-    int error = m_Oculus->initOculus();
-    if(error == OCULUS_NO_ERROR){
-        m_bOculusFound = true;
-        ui->labelStatus->setText("Device Found");
-    }
-    else{
-        m_bOculusFound = false;
-        ui->labelStatus->setText("Device Not Found");
-    }
+    initOculus();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete m_Oculus;
 }
 
 void MainWindow::closeEvent(QCloseEvent*)
@@ -32,14 +25,11 @@ void MainWindow::closeEvent(QCloseEvent*)
     if(m_bOculusFound){
         m_Oculus->shutdownOculus();
     }
-    delete m_Oculus;
 }
 
-void MainWindow::on_refresh_clicked()
+//Warning: |initOculus| must be called at least once before destructor is called
+void MainWindow::initOculus()
 {
-    if(m_bOculusFound){
-        m_Oculus->shutdownOculus();
-    }
     int error = m_Oculus->initOculus();
     if(error == OCULUS_NO_ERROR){
         m_bOculusFound = true;
@@ -49,6 +39,14 @@ void MainWindow::on_refresh_clicked()
         m_bOculusFound = false;
         ui->labelStatus->setText("Device Not Found");
     }
+}
+
+void MainWindow::on_refresh_clicked()
+{
+    if(m_bOculusFound){
+        m_Oculus->shutdownOculus();
+    }
+    initOculus();
 }
 
 void MainWindow::on_load_clicked()

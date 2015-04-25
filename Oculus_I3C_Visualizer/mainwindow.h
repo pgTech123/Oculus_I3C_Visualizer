@@ -24,6 +24,9 @@ public:
 
     void closeEvent(QCloseEvent*);
 
+private:
+    void initOculus();
+
 private slots:
     void on_refresh_clicked();
     void on_load_clicked();

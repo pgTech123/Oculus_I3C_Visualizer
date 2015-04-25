@@ -7,7 +7,7 @@ Oculus::Oculus()
 
 Oculus::~Oculus()
 {
-    //If not shutdown, shutdown
+    cout << "Oculus deleted" << endl;
 }
 
 int Oculus::initOculus()
@@ -19,7 +19,6 @@ int Oculus::initOculus()
         ovrHmd_ConfigureTracking(m_hmd, ovrTrackingCap_Orientation |
                                         ovrTrackingCap_MagYawCorrection |
                                         ovrTrackingCap_Position, 0);
-
         // DEBUG
         //cout <<"NO error" << endl;
         return OCULUS_NO_ERROR;
@@ -32,13 +31,14 @@ int Oculus::initOculus()
 
 void Oculus::render(string filename)
 {
-    //DO NOT ALLOW HAVE THIS THREAD RUNNING TWICE
+    //***DO NOT ALLOW HAVE THIS THREAD RUNNING TWICE***
     if(m_threadID == 0 && m_hmd)
     {
         //Creation of the rendering window
         m_RenderingWidget = new RenderingWidget();
         m_RenderingWidget->setFilename(filename);
 
+        //Data that the thread needs to have a reference to
         data.hmd = &m_hmd;
         data.p_renderingWidget = m_RenderingWidget;
         data.end = false;
@@ -49,7 +49,11 @@ void Oculus::render(string filename)
 
 void Oculus::shutdownOculus()
 {
+    //The thread has a reference to |data.end| so when true -> calls end of loop
     data.end = true;
+
+    //We suppose that a loop should not last more than 1000ms.
+    //Reliability can be improved by modifying how shutdown is done here.
     Sleep(200);
     if(m_threadID != 0){
         CloseHandle(m_threadHandle);
@@ -57,8 +61,15 @@ void Oculus::shutdownOculus()
         delete m_RenderingWidget;
     }
 
-    ovrHmd_Destroy(m_hmd);
+    cout << "1..." << endl;
+    if(m_hmd){
+        cout << "2..." << endl;
+        ovrHmd_Destroy(m_hmd);
+        cout << "3..." << endl;
+    }
+    cout << "4..." << endl;
     ovr_Shutdown();
+    cout << "5..." << endl;
 }
 
 DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
@@ -67,9 +78,12 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
     ThreadData *data = (ThreadData*)lpParameter;
     ovrHmd hmd = *(ovrHmd*)data->hmd;
     RenderingWidget *renderingWidget = (RenderingWidget*)data->p_renderingWidget;
+
+    //Initialise |RenderingWidget|
     renderingWidget->launchOculusEngine();
     ovrSizei resolution = hmd->Resolution;
-    renderingWidget->setScreenResolution(resolution.w, resolution.h);   //MUST BE CALLED BEFORE SETTING FOV
+    //Warning: |setScreenResolution| must be called before setting FOV(no protection)
+    renderingWidget->setScreenResolution(resolution.w, resolution.h);
 
     //Set the FOV for each eye:
     ovrFovPort eyeFov[2];
@@ -103,11 +117,10 @@ DWORD WINAPI renderWorkFunction(LPVOID lpParameter)
         }
     }
 
+    renderingWidget->destroyOculusEngine(); //Must be done within the thread...
 
-    renderingWidget->destroyOculusEngine();
     // DEBUG
     cout << "out" << endl;
-
     return 0;
 }
 
@@ -126,6 +139,7 @@ void render(ovrHmd hmd, ovrVector3f eyeViewOffset[2],
 
     for(int eyeIndex = 0; eyeIndex < ovrEye_Count; eyeIndex++)
     {
+        //Get Head Position
         pose = ts.HeadPose.ThePose;
         pose.Rotation.GetEulerAngles<Axis_Y, Axis_X, Axis_Z>(&yaw, &pitch, &roll);
 
@@ -134,6 +148,8 @@ void render(ovrHmd hmd, ovrVector3f eyeViewOffset[2],
 
         //Update rendering widget
         renderingWidget->setRotation(yaw, pitch, roll);
+
+        //Actual call to for rendering the appropriate eye
         if(eye == ovrEye_Left){
             renderingWidget->setLeftEyePosition(headPose.Position.x + eyeViewOffset[ovrEye_Left].x,
                                                 headPose.Position.y + eyeViewOffset[ovrEye_Left].y,
