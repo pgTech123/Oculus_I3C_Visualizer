@@ -11,6 +11,8 @@
 
 
 #include <iostream>
+#include "CL/cl.h"
+#include "../OpenCL_Utils/cl_utils.h"
 
 //DEBUG
 using namespace std;
@@ -63,7 +65,7 @@ typedef struct{
 
 /* *******************************************************************
  * Warning: I3CCube consider that the render function won't be called
- *          if there was an error of an sort setting ImageProperties.
+ *          if there was an error of any sort setting ImageProperties.
  * *******************************************************************/
 
 class I3CCube
@@ -122,7 +124,10 @@ private:
 
     bool childIsHidden(Coordinate childCorners[8]);
 
-private:
+protected:
+    bool mp_bOpenCLEnable;
+
+private:    
     //Hierarchy level
     int m_iHierarchyLevel;
     unsigned char m_ucMap;

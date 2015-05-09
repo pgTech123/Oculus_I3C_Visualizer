@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QMAKE_LFLAGS += /INCREMENTAL:NO
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -21,7 +22,10 @@ SOURCES += main.cpp\
     I3COculusEngine/i3coculusengine.cpp \
     I3COculusEngine/Utils/gvbinaryfunctions.cpp \
     I3COculusEngine/Utils/gvtransform.cpp \
-    I3COculusEngine/i3ccube.cpp
+    I3COculusEngine/i3ccube.cpp \
+    OpenCL_Utils/cl_utils.cpp \
+    I3COculusEngine/i3ccubecpu.cpp \
+    I3COculusEngine/i3ccubegpu.cpp
 
 HEADERS  += mainwindow.h \
     oculus.h \
@@ -29,7 +33,10 @@ HEADERS  += mainwindow.h \
     I3COculusEngine/i3coculusengine.h \
     I3COculusEngine/Utils/gvbinaryfunctions.h \
     I3COculusEngine/Utils/gvtransform.h \
-    I3COculusEngine/i3ccube.h
+    I3COculusEngine/i3ccube.h \
+    OpenCL_Utils/cl_utils.h \
+    I3COculusEngine/i3ccubecpu.h \
+    I3COculusEngine/i3ccubegpu.h
 
 FORMS    += mainwindow.ui
 
@@ -41,3 +48,8 @@ LIBS += -lws2_32
 
 INCLUDEPATH += $$PWD/OculusSDK/LibOVR/Lib/Win32/VS2010
 DEPENDPATH += $$PWD/OculusSDK/LibOVR/Lib/Win32/VS2010
+
+win32: LIBS += -L$$PWD/OpenCL/lib/x86/ -lOpenCL
+
+INCLUDEPATH += $$PWD/OpenCL/include
+DEPENDPATH += $$PWD/OpenCL/include

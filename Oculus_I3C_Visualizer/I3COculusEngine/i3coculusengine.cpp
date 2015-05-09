@@ -15,11 +15,24 @@ I3COculusEngine::I3COculusEngine()
     m_pucPixelsFilled = NULL;
     m_iArrCubeAtLevel = NULL;
     m_pGVImageArray = NULL;
+
+    m_clContext = NULL;
+    m_clCommandQueue = NULL;
+
+    //Check if OPENCL acceleration on GPU is possible
+    vector<GPU> vGPUs = getGPUAvailable();
+    if(vGPUs.size() > 0){
+        mp_bOpenCLEnable = true;
+        initializeOpenCLAcceleration(vGPUs);
+    }else{
+        mp_bOpenCLEnable = false;
+    }
 }
 
 I3COculusEngine::~I3COculusEngine()
 {
     clearImageInMemory();
+    //TODO: release OCL objects if needed...
 }
 
 int I3COculusEngine::openI3CFile(const char* filename)
@@ -346,3 +359,17 @@ void I3COculusEngine::clearImageInMemory()
     }
 }
 
+void I3COculusEngine::initializeOpenCLAcceleration(vector<GPU> vGPUs)
+{
+    GPU gpu = findBestGPU(vGPUs);
+    m_clContext = createContexOnGPU(gpu);
+    m_clCommandQueue = createCommandQueue(gpu, m_clContext);
+    if(runProgramOnDevice(gpu, m_clContext, OPENCL_SOURCES) != SUCCESS){
+        //An error occured so we go back to slow rendering on the CPU
+        //TODO: make it possible to recover from certain errors...
+        mp_bOpenCLEnable = false;
+        return;
+    }
+
+    //TODO: Allocate memory, create kernel(s), pass these objects reference to child.
+}

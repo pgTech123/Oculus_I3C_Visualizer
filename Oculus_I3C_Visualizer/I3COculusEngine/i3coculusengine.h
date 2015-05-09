@@ -15,6 +15,7 @@
 #include "i3ccube.h"
 #include "Utils/gvtransform.h"
 #include "Utils/gvbinaryfunctions.h"
+#include "../OpenCL_Utils/cl_utils.h"
 
 
 /* Error Definition */
@@ -23,6 +24,8 @@
 #define INVALID_CUBE_SIZE       102
 #define SIZE_NOT_BASE_2         103
 #define FILE_CORRUPTED          104
+
+#define OPENCL_SOURCES          "...TODO..."
 
 
 /* **********************************************************************
@@ -42,11 +45,11 @@
  * **********************************************************************/
 
 
-/* ********************
- * TODO:
- * -Add pixel density
+/* *************************************************************
+ * Limitations:
+ *  - Only one GPU is used(if any are available).
  *
- * ********************/
+ * *************************************************************/
 
 class I3COculusEngine: public I3CCube
 {
@@ -79,7 +82,13 @@ private:
 
     void clearImageInMemory();
 
+    void initializeOpenCLAcceleration(vector<GPU> vGPUs);
+
 private:
+    //GPU Acceleration
+    cl_context m_clContext;
+    cl_command_queue m_clCommandQueue;
+
     int m_iSideLength;
     int m_iNumberOfLevels;
     int* m_iArrCubeAtLevel;
