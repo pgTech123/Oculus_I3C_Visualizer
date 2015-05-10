@@ -1,3 +1,15 @@
+/* ********************************************************
+ * Author   :   Pascal Gendron
+ * Filename :   mainwindow.cpp
+ * Creation :   May 9th 2015
+ * Purpose  :   Manage main UI
+ * Lisence  :   GNU General Public License
+ *
+ * Description:
+ * This class (MainWindow) is used to manage the UI and call
+ * appropriate functions depending on the user actions.
+ * *********************************************************/
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -9,8 +21,10 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setFixedWidth(400);
     this->setFixedHeight(200);
 
-    m_Oculus = new Oculus();
-    initOculus();
+    ui->pushButtonGo->setEnabled(false);
+
+    m_OculusApp = new OculusApp();
+    this->initOculusDevice();
 }
 
 MainWindow::~MainWindow()
@@ -20,32 +34,39 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent*)
 {
-    if(m_bOculusFound){
-        m_Oculus->shutdownOculus();
-    }
-    delete m_Oculus;
+    this->shutdownOculusDevice();
 }
 
-//Warning: Must be called at least once in the execution
-void MainWindow::initOculus()
+void MainWindow::initOculusDevice()
 {
-    int error = m_Oculus->initOculus();
+    int error = m_OculusApp->initOculusDevice();
     if(error == OCULUS_NO_ERROR){
-        m_bOculusFound = true;
+        ui->pushButtonGo->setEnabled(true);
         ui->labelStatus->setText("Device Found");
     }
     else{
-        m_bOculusFound = false;
+        ui->pushButtonGo->setEnabled(false);
         ui->labelStatus->setText("Device Not Found");
+    }
+}
+
+void MainWindow::shutdownOculusDevice()
+{
+    if(m_OculusApp != NULL){
+        if(ui->pushButtonGo->isEnabled()){
+            m_OculusApp->shutdownOculusDevice();
+        }
+        delete m_OculusApp;
+        m_OculusApp = NULL;
     }
 }
 
 void MainWindow::on_refresh_clicked()
 {
-    if(m_bOculusFound){
-        m_Oculus->shutdownOculus();
+    if(ui->pushButtonGo->isEnabled()){
+        m_OculusApp->shutdownOculusDevice();
     }
-    initOculus();
+    this->initOculusDevice();
 }
 
 void MainWindow::on_load_clicked()
@@ -60,6 +81,6 @@ void MainWindow::on_load_clicked()
 
 void MainWindow::on_pushButtonGo_clicked()
 {
-    string filePath = ui->lineEditPath->text().toStdString();
-    m_Oculus->render(filePath);
+    std::string filePath = ui->lineEditPath->text().toStdString();
+    m_OculusApp->startRendering(filePath);
 }

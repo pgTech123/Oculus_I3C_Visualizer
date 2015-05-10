@@ -1,3 +1,15 @@
+/* ********************************************************
+ * Author   :   Pascal Gendron
+ * Filename :   mainwindow.h
+ * Creation :   May 9th 2015
+ * Purpose  :   Manage main UI
+ * Lisence  :   GNU General Public License
+ *
+ * Description:
+ * This class (MainWindow) is used to manage the UI and call
+ * appropriate functions depending on the user actions.
+ * *********************************************************/
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -5,10 +17,8 @@
 #include <QString>
 #include <QFileDialog>
 #include <QCloseEvent>
-#include "oculus.h"
-
-#include <iostream>
-using namespace std;
+#include <string>
+#include "oculusapp.h"
 
 namespace Ui {
 class MainWindow;
@@ -25,7 +35,8 @@ public:
     void closeEvent(QCloseEvent*);
 
 private:
-    void initOculus();
+    void initOculusDevice();
+    void shutdownOculusDevice();
 
 private slots:
     void on_refresh_clicked();
@@ -35,8 +46,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
-    Oculus *m_Oculus;
-    bool m_bOculusFound;
+    OculusApp *m_OculusApp;
 };
 
 #endif // MAINWINDOW_H
