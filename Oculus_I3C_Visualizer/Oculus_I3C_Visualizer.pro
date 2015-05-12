@@ -18,10 +18,12 @@ INCLUDEPATH += "OculusSDK/LibOVR/Include"
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    oculusapp.cpp
+    oculusapp.cpp \
+    i3crenderingengine.cpp
 
 HEADERS  += mainwindow.h \
-    oculusapp.h
+    oculusapp.h \
+    i3crenderingengine.h
 
 FORMS    += mainwindow.ui
 
@@ -35,6 +37,7 @@ INCLUDEPATH += $$PWD/OculusSDK/LibOVR/Lib/Windows/Win32/Release/VS2010
 DEPENDPATH += $$PWD/OculusSDK/LibOVR/Lib/Windows/Win32/Release/VS2010
 
 win32: LIBS += -L$$PWD/OpenCL/lib/x86/ -lOpenCL
+LIBS += -L$$PWD/OpenCL/lib/x86/ -lglut32
 
 INCLUDEPATH += $$PWD/OpenCL/include
 DEPENDPATH += $$PWD/OpenCL/include
