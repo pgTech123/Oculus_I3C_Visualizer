@@ -13,7 +13,10 @@
 #define I3CRENDERINGENGINE_H
 
 #include <string>
+#include <Windows.h>
 #include <GL/glut.h>
+#include <CL/cl.h>
+#include <CL/cl_gl.h>
 
 //DEBUG
 #include <iostream>
@@ -22,10 +25,16 @@
 #define LEFT_EYE    0
 #define RIGHT_EYE   1
 
+typedef CL_API_ENTRY cl_int (CL_API_CALL *clGetGLContextInfoKHR_fn)(const cl_context_properties * /* properties */,
+                                                                    cl_gl_context_info /* param_name */,
+                                                                    size_t /* param_value_size */,
+                                                                    void * /* param_value */,
+                                                                    size_t * /*param_value_size_ret*/);
+
 class I3CRenderingEngine
 {
 public:
-    I3CRenderingEngine();
+    I3CRenderingEngine(HDC hDC, HGLRC hRC);
     ~I3CRenderingEngine();
 
     void openFile(std::string filename);
@@ -36,6 +45,12 @@ public:
     void setOrientation(float yaw, float pitch, float roll);
 
     void render(GLuint texId, int eye = 0);
+
+private:
+    void getOpenGLDevice(HDC hDC, HGLRC hRC);
+
+private:
+    cl_device_id m_device;
 };
 
 #endif // I3CRENDERINGENGINE_H

@@ -11,8 +11,9 @@
 
 #include "i3crenderingengine.h"
 
-I3CRenderingEngine::I3CRenderingEngine()
+I3CRenderingEngine::I3CRenderingEngine(HDC hDC, HGLRC hRC)
 {
+    getOpenGLDevice(hDC, hRC);
 }
 
 I3CRenderingEngine::~I3CRenderingEngine()
@@ -59,4 +60,26 @@ void I3CRenderingEngine::render(GLuint texId, int eye)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h,
                          0, GL_RGBA, GL_UNSIGNED_BYTE, arr);
     delete[] arr;
+}
+
+void I3CRenderingEngine::getOpenGLDevice(HDC hDC, HGLRC hRC)
+{
+    //WARNING: No error handeling in this function...
+    cl_uint platAvail;
+    cl_platform_id platform;
+
+    //Get platform
+    clGetPlatformIDs(1, &platform, &platAvail);
+
+    cl_context_properties props[] = {CL_CONTEXT_PLATFORM, (cl_context_properties)platform,
+                                     CL_GL_CONTEXT_KHR,   (cl_context_properties)hRC,
+                                     CL_WGL_HDC_KHR,      (cl_context_properties)hDC, 0};
+
+    clGetGLContextInfoKHR_fn _clGetGLContextInfoKHR = (clGetGLContextInfoKHR_fn)clGetExtensionFunctionAddress("clGetGLContextInfoKHR");
+    _clGetGLContextInfoKHR(props, CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR, sizeof(cl_device_id), &m_device, NULL);
+
+    //Verification DEBUG
+    char GPU_name[100];
+    clGetDeviceInfo(m_device, CL_DEVICE_NAME, sizeof(GPU_name), GPU_name, NULL);
+    std::cout << GPU_name << std::endl;
 }

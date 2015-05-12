@@ -38,6 +38,8 @@ DEPENDPATH += $$PWD/OculusSDK/LibOVR/Lib/Windows/Win32/Release/VS2010
 
 win32: LIBS += -L$$PWD/OpenCL/lib/x86/ -lOpenCL
 LIBS += -L$$PWD/OpenCL/lib/x86/ -lglut32
+LIBS += -L$$PWD/OpenCL/lib/x86/ -lglew32
+LIBS += -L$$PWD/OpenCL/lib/x86/ -lGLAux
 
 INCLUDEPATH += $$PWD/OpenCL/include
 DEPENDPATH += $$PWD/OpenCL/include

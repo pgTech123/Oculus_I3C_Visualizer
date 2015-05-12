@@ -18,6 +18,8 @@ OculusApp::OculusApp():QGLWidget()
     ovr_Initialize(NULL);
     m_timer = new QTimer(this);
 
+    m_RenderingEngine = NULL;
+
     //TODO: Set to false and implement dismiss
     m_bDismissHsw = true;
 }
@@ -26,6 +28,10 @@ OculusApp::~OculusApp()
 {
     this->shutdownOculusDevice();
     ovr_Shutdown();
+
+    if(m_RenderingEngine != NULL){
+        delete m_RenderingEngine;
+    }
 }
 
 int OculusApp::initOculusDevice()
@@ -60,14 +66,17 @@ void OculusApp::startRendering(std::string filename)
     this->move(QPoint(m_hmd->WindowsPos.x, m_hmd->WindowsPos.y));
     this->showFullScreen();
 
-    //Load the model in the engine
-    m_RenderingEngine.openFile(filename);
-
     //Configure Rendering
     this->initRenderingConfig();
     ovrHmd_ConfigureRendering(m_hmd, &m_renderingConfig.Config, m_hmd->DistortionCaps,
                               m_hmd->DefaultEyeFov, m_eyeRenderDesc );
     ovrHmd_AttachToWindow(m_hmd, m_renderingConfig.OGL.Window, NULL, NULL);
+
+    //Rendering Engine Initialisation
+    m_RenderingEngine = new I3CRenderingEngine(wglGetCurrentDC(), wglGetCurrentContext());
+
+    //Load the model in the engine
+    m_RenderingEngine->openFile(filename);
 
     //Setting Parameters
     this->initParameters();
@@ -84,7 +93,7 @@ void OculusApp::initRenderingConfig()
     m_renderingConfig.OGL.Header.BackBufferSize = m_hmd->Resolution;
     m_renderingConfig.OGL.Header.Multisample    = 1;
     m_renderingConfig.OGL.Window                = (HWND)this->winId();
-    m_renderingConfig.OGL.DC                    = GetDC(m_renderingConfig.OGL.Window);
+    m_renderingConfig.OGL.DC                    = wglGetCurrentDC();    //GetDC(m_renderingConfig.OGL.Window);
 }
 
 void OculusApp::initParameters()
@@ -95,9 +104,9 @@ void OculusApp::initParameters()
     m_eyeRenderDesc[1] = ovrHmd_GetRenderDesc(m_hmd, ovrEye_Right, m_eyeFov[1]);
     m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyeViewOffset;
 
-    m_RenderingEngine.setFOV(m_eyeFov[0].DownTan, m_eyeFov[0].UpTan,
+    m_RenderingEngine->setFOV(m_eyeFov[0].DownTan, m_eyeFov[0].UpTan,
                              m_eyeFov[0].RightTan, m_eyeFov[0].LeftTan, LEFT_EYE);
-    m_RenderingEngine.setFOV(m_eyeFov[1].DownTan, m_eyeFov[1].UpTan,
+    m_RenderingEngine->setFOV(m_eyeFov[1].DownTan, m_eyeFov[1].UpTan,
                              m_eyeFov[1].RightTan, m_eyeFov[1].LeftTan, RIGHT_EYE);
 }
 
@@ -172,17 +181,17 @@ void OculusApp::RenderScene()
             OVR::Quatf orientation = eyeRenderPose[eyeIndex].Orientation;
             orientation.GetEulerAngles<OVR::Axis_Y, OVR::Axis_X, OVR::Axis_Z>(&yaw, &pitch, &roll);
             //std::cout << yaw << ", " << pitch << ", " << roll << std::endl;   //DEBUG
-            m_RenderingEngine.setOrientation(yaw, pitch, roll);
+            m_RenderingEngine->setOrientation(yaw, pitch, roll);
 
             //Update Position
             float x = eyeRenderPose[eyeIndex].Position.x;
             float y = eyeRenderPose[eyeIndex].Position.y;
             float z = eyeRenderPose[eyeIndex].Position.z;
             //std::cout << x << ", " << y << ", " << z << std::endl;   //DEBUG
-            m_RenderingEngine.setPosition(x, y, z);
+            m_RenderingEngine->setPosition(x, y, z);
 
             //Rendering
-            m_RenderingEngine.render(m_eyeTexture[eyeIndex].OGL.TexId, eyeIndex);
+            m_RenderingEngine->render(m_eyeTexture[eyeIndex].OGL.TexId, eyeIndex);
         }
 
         //Prepearing to display

@@ -74,7 +74,7 @@ private:
     ovrGLTexture m_eyeTexture[2];
 
     //Rendering Engine
-    I3CRenderingEngine m_RenderingEngine;
+    I3CRenderingEngine *m_RenderingEngine;
 };
 
 #endif // OCULUSAPP_H
