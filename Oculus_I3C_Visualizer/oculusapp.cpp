@@ -110,6 +110,7 @@ void OculusApp::initParameters()
                              m_eyeFov[1].RightTan, m_eyeFov[1].LeftTan, RIGHT_EYE);
 }
 
+//This function must be called after initialisation of |m_RenderingEngine|
 void OculusApp::createRenderingTexture()
 {
     //For each eye
@@ -151,6 +152,9 @@ void OculusApp::createRenderingTexture()
         m_eyeTexture[i].OGL.Header.RenderViewport.Size.h = recommenedTexSize.h;
         m_eyeTexture[i].OGL.Header.RenderViewport.Size.w = recommenedTexSize.w;
         m_eyeTexture[i].OGL.TexId = texId;
+
+        //Pass the texture to rederer
+        m_RenderingEngine->setTexture(texId, i);
     }
 }
 

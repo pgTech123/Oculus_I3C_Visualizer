@@ -48,6 +48,8 @@ public:
 private:
     void initRenderingConfig();
     void initParameters();
+
+    //This function must be called after initialisation of |m_RenderingEngine|
     void createRenderingTexture();
 
 private slots:
