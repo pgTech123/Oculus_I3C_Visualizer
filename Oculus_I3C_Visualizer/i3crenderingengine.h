@@ -56,7 +56,7 @@ public:
     //These functions are typically called in every loop
     void setPosition(float x, float y, float z);
     void setOrientation(float yaw, float pitch, float roll);
-    void render(GLuint texId, int eye = 0); //TODO: remove textId
+    void render(int eye = 0);
 
 private:
     void getOpenGLDevice(HDC hDC, HGLRC hRC);
@@ -68,19 +68,23 @@ private:
     Sources_OCL loadCLSource(char* filename, unsigned int max_length=100000);
 
 private:
+    //Texture
+    int m_iWidth[2];
+    int m_iHeight[2];
+
     //
     cl_device_id m_device;
     cl_context m_context;
     cl_command_queue m_queue;
 
     //Memory
-    cl_mem m_clTexture[2];
+    cl_mem m_clTexture[2];  //Left/Right
     cl_mem m_clI3CImage;
     cl_mem m_clCubeStack;   //TODO: to use
 
     //Software that runs on GPU
     cl_program m_program;
-    cl_kernel m_kernel;
+    cl_kernel m_kernel[2];  //Left/Right
 };
 
 #endif // I3CRENDERINGENGINE_H

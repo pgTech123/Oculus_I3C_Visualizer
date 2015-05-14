@@ -5,3 +5,7 @@ This project is developed on Windows 7 using:
 - Oculus SDK 0.5.0 Beta for Windows
 - Qt MVC2010_Opengl Version 5.2.1
 - OpenCL 1.2
+
+
+Instructions: 
+Move cl_program.cl next to the executable.

@@ -161,7 +161,7 @@ void OculusApp::createRenderingTexture()
 void OculusApp::RenderScene()
 {
     //Health & Safety warning
-    //TODO: WORK TO DO HERE: Dismiss
+    //TODO: WORK TO DO HERE: Dismiss not auto
     ovrHmd_GetHSWDisplayState(m_hmd, &m_hswDisplayState);
     if(m_hswDisplayState.Displayed && m_bDismissHsw){
         ovrHmd_DismissHSWDisplay(m_hmd);
@@ -195,7 +195,7 @@ void OculusApp::RenderScene()
             m_RenderingEngine->setPosition(x, y, z);
 
             //Rendering
-            m_RenderingEngine->render(m_eyeTexture[eyeIndex].OGL.TexId, eyeIndex);
+            m_RenderingEngine->render(eyeIndex);
         }
 
         //Prepearing to display

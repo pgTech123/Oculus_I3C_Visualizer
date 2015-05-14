@@ -16,7 +16,8 @@ I3CRenderingEngine::I3CRenderingEngine(HDC hDC, HGLRC hRC)
     m_clTexture[0] = NULL;
     m_clTexture[1] = NULL;
     m_clI3CImage = NULL;
-    m_kernel = NULL;
+    m_kernel[0] = NULL;
+    m_kernel[1] = NULL;
     m_program = NULL;
 
     getOpenGLDevice(hDC, hRC);
@@ -24,8 +25,11 @@ I3CRenderingEngine::I3CRenderingEngine(HDC hDC, HGLRC hRC)
 
 I3CRenderingEngine::~I3CRenderingEngine()
 {
-    if(m_kernel != NULL){
-        clReleaseKernel(m_kernel);
+    if(m_kernel[0] != NULL){
+        clReleaseKernel(m_kernel[0]);
+    }
+    if(m_kernel[1] != NULL){
+        clReleaseKernel(m_kernel[1]);
     }
     if(m_program != NULL){
         clReleaseProgram(m_program);
@@ -64,21 +68,15 @@ void I3CRenderingEngine::setTexture(GLuint texId, int eye)
     //Reference OpenGL memory to OpenCL
     glBindTexture(GL_TEXTURE_2D, texId);
     m_clTexture[eye] = clCreateFromGLTexture(m_context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, texId, NULL);
-}
 
-void I3CRenderingEngine::setPosition(float x, float y, float z)
-{
+    //Set Texture Argument
+    clSetKernelArg(m_kernel[eye], 0, sizeof(m_clTexture[eye]), &m_clTexture[eye]);
 
-}
+    //Get data
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &m_iWidth[eye]);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &m_iHeight[eye]);
 
-void I3CRenderingEngine::setOrientation(float yaw, float pitch, float roll)
-{
-
-}
-
-void I3CRenderingEngine::render(GLuint texId, int eye)
-{
-    glBindTexture(GL_TEXTURE_2D, texId);
+    /*glBindTexture(GL_TEXTURE_2D, texId);
 
     //Get Dimensions
     int w, h;
@@ -95,7 +93,41 @@ void I3CRenderingEngine::render(GLuint texId, int eye)
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h,
                          0, GL_RGBA, GL_UNSIGNED_BYTE, arr);
-    delete[] arr;
+    delete[] arr;*/
+}
+
+void I3CRenderingEngine::setPosition(float x, float y, float z)
+{
+
+}
+
+void I3CRenderingEngine::setOrientation(float yaw, float pitch, float roll)
+{
+
+}
+
+void I3CRenderingEngine::render(int eye)
+{
+    //Give texture ownership to OpenCL
+    glFinish();
+    cl_int error = clEnqueueAcquireGLObjects(m_queue, 1,  &m_clTexture[eye], 0, 0, NULL);
+    if(error != CL_SUCCESS){
+        std::cout << "Aquirering error..." << std::endl;
+    }
+
+    //Render!
+    size_t a[2] = {m_iWidth[eye], m_iHeight[eye]};
+    error = clEnqueueNDRangeKernel(m_queue, m_kernel[eye], 2, NULL, a , NULL, 0, NULL, NULL);
+    if(error != CL_SUCCESS){
+        std::cout << "Task error..." << std::endl;
+    }
+
+    //Give back texture ownership to OpenGL
+    clFinish(m_queue);
+    error = clEnqueueReleaseGLObjects(m_queue, 1,  &m_clTexture[eye], 0, 0, NULL);
+    if(error == CL_OUT_OF_RESOURCES ){
+        std::cout << "Releasing error..." << std::endl;
+    }
 }
 
 void I3CRenderingEngine::getOpenGLDevice(HDC hDC, HGLRC hRC)
@@ -132,10 +164,15 @@ void I3CRenderingEngine::createKernels()
         m_program = clCreateProgramWithSource(m_context,  1, (const char **)&sources.sources,
                                                        (const size_t *)&sources.source_size, NULL);//*/
         //Compile Program
-        clBuildProgram(m_program, 1, &m_device, NULL, NULL, NULL);
+        cl_int error;
+        error = clBuildProgram(m_program, 1, &m_device, NULL, NULL, NULL);
+        if(error != CL_SUCCESS){
+            std::cout << "Compilation error..." << std::endl;
+        }
 
-        //Create Kernel
-        m_kernel = clCreateKernel(m_program, "hello", NULL);
+        //Create Kernels (left/right)
+        m_kernel[0] = clCreateKernel(m_program, "clearImage", NULL);
+        m_kernel[1] = clCreateKernel(m_program, "clearImage", NULL);
     }
     else{
         std::cout << "ERROR: CL Sources NOT found" << std::endl;   //DEBUG
