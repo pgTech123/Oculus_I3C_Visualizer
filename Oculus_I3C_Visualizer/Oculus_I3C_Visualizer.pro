@@ -19,11 +19,21 @@ INCLUDEPATH += "OculusSDK/LibOVR/Include"
 SOURCES += main.cpp\
         mainwindow.cpp \
     oculusapp.cpp \
-    i3crenderingengine.cpp
+    i3crenderingengine.cpp \
+    utils/gvbinaryfunctions.cpp \
+    utils/gvtransform.cpp \
+    image_cubes/i3ccube.cpp \
+    image_cubes/i3cpixelcube.cpp \
+    image_cubes/i3creferencecube.cpp
 
 HEADERS  += mainwindow.h \
     oculusapp.h \
-    i3crenderingengine.h
+    i3crenderingengine.h \
+    utils/gvbinaryfunctions.h \
+    utils/gvtransform.h \
+    image_cubes/i3ccube.h \
+    image_cubes/i3cpixelcube.h \
+    image_cubes/i3creferencecube.h
 
 FORMS    += mainwindow.ui
 

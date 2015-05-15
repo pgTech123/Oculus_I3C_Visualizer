@@ -6,7 +6,13 @@
  * Lisence  :   GNU General Public License
  *
  * Description:
- * TODO
+ * This class creates OpenCL kernels and makes the
+ * synchronisation between OpenGL and OpenCL texture
+ * ownership. It also reads the I3C file and creates
+ * |I3CCubes| classes accordingly to what's written in
+ * the file. OCL Kernels are passed to these childs so
+ * each cube can access and run code on the GPU. This
+ * is like the Mothership.
  * *********************************************************/
 
 #ifndef I3CRENDERINGENGINE_H
@@ -17,10 +23,16 @@
 #include <direct.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fstream>
 
 #include <GL/glut.h>
 #include <CL/cl.h>
 #include <CL/cl_gl.h>
+
+#include "image_cubes/i3cpixelcube.h"
+#include "image_cubes/i3creferencecube.h"
+#include "utils/gvtransform.h"
+#include "utils/gvbinaryfunctions.h"
 
 //DEBUG
 #include <iostream>
@@ -28,6 +40,13 @@
 
 #define LEFT_EYE    0
 #define RIGHT_EYE   1
+
+/* Error Definition */
+#define I3C_SUCCESS             0
+#define UNABLE_TO_OPEN_FILE     101
+#define INVALID_CUBE_SIZE       102
+#define SIZE_NOT_BASE_2         103
+#define FILE_CORRUPTED          104
 
 typedef CL_API_ENTRY cl_int (CL_API_CALL *clGetGLContextInfoKHR_fn)(const cl_context_properties * /* properties */,
                                                                     cl_gl_context_info /* param_name */,
@@ -49,7 +68,7 @@ public:
     ~I3CRenderingEngine();
 
     //These Functions are typically called once (or once for each eye)
-    void openFile(std::string filename);
+    int openFile(std::string filename);
     void setFOV(float up, float down, float right, float left, int eye = 0);
     void setTexture(GLuint texId, int eye);
 
@@ -67,24 +86,48 @@ private:
     // By default: CL sources max 1 Mo
     Sources_OCL loadCLSource(char* filename, unsigned int max_length=100000);
 
-private:
-    //Texture
-    int m_iWidth[2];
-    int m_iHeight[2];
+    //I3C File reading
+    int readImageFile(std::fstream *file);
+    int verifyAndAssignSideLength(int iSideLength);
+    void setNumberOfLevels();
+    void readNumOfMaps(std::fstream *file);
+    int readCubes(std::fstream *file);
+    int readPixelCubes(std::fstream *file);
+    int readIndexCubes(std::fstream *file);
+    int readMap(fstream *file, unsigned char* ucMap, int* iNumOfPix);
+    void clearCubesInMemory();
 
-    //
+private:
+    //Texture Size
+    int m_iWidth[2];  //Left/Right
+    int m_iHeight[2]; //Left/Right
+
+    //OpenCL General
     cl_device_id m_device;
     cl_context m_context;
     cl_command_queue m_queue;
 
     //Memory
     cl_mem m_clTexture[2];  //Left/Right
-    cl_mem m_clI3CImage;
-    cl_mem m_clCubeStack;   //TODO: to use
+    cl_mem m_clFOV[2];      //Left/Right
+    cl_mem m_clCubeDstSorted;
 
-    //Software that runs on GPU
+    //Code that runs on GPU
     cl_program m_program;
-    cl_kernel m_kernel[2];  //Left/Right
+    cl_kernel m_kernelClearImage[2];  //Left/Right
+    cl_kernel m_kernelComputeChildCorners;
+
+    //--------  IMAGE  ----------
+    Transform m_transform;
+    unsigned char m_ucCubeDstSorted[8];
+
+    //Image parameters
+    int m_iSideLenght;
+    int m_iNumberOfLevels;
+    int *m_iArrCubeAtLevel;
+
+    int m_iTotalNumberOfCubes;
+    I3CCube **m_Cubes;
 };
 
 #endif // I3CRENDERINGENGINE_H
