@@ -21,6 +21,7 @@ class I3CCube
 public:
     I3CCube(cl_context *context,
             cl_command_queue *commandQueue);
+    virtual ~I3CCube();
 
     int getHierarchyLevel();
 

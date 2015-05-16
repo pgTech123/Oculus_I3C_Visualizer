@@ -22,7 +22,7 @@ class I3CReferenceCube : public I3CCube
 public:
     I3CReferenceCube(cl_context *context,
                      cl_command_queue *commandQueue,
-                     unsigned char *uc_cubeDstSorted,
+                     cl_uchar *uc_cubeDstSorted,
                      cl_kernel *computeChildCornersKernel);  //Array of size 8
     ~I3CReferenceCube();
 
@@ -34,7 +34,7 @@ private:
     //Reference cube
     I3CCube** m_pArrChildCubes;
 
-    unsigned char *m_ptrArrCubeDstSorted;
+    cl_uchar *m_ptrArrCubeDstSorted;
     cl_mem m_clChildCorners[8];
     cl_kernel *m_clComputeChildCornersKernel;
 };

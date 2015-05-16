@@ -123,7 +123,7 @@ private:
 
     //--------  IMAGE  ----------
     Transform m_transform;
-    unsigned char m_ucCubeDstSorted[8];
+    cl_uchar m_ucCubeDstSorted[8];
 
     //Image parameters
     int m_iSideLenght;

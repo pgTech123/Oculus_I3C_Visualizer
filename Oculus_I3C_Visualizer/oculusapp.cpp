@@ -26,6 +26,7 @@ OculusApp::OculusApp():QGLWidget()
 
 OculusApp::~OculusApp()
 {
+    disconnect(m_timer, SIGNAL(timeout()), this, SLOT(RenderScene()));
     this->shutdownOculusDevice();
     ovr_Shutdown();
 

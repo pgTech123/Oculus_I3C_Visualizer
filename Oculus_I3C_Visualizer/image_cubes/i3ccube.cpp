@@ -21,6 +21,9 @@ I3CCube::I3CCube(cl_context *context,
     m_clCommandQueue = commandQueue;
 }
 
+I3CCube::~I3CCube()
+{
+}
 
 int I3CCube::getHierarchyLevel()
 {

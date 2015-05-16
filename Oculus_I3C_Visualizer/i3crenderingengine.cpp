@@ -104,13 +104,13 @@ void I3CRenderingEngine::setFOV(float up, float down, float right, float left, i
 
     float r_l_ratio = sinLeft / (sinRight + sinLeft);
     float u_d_ratio = sinUp / (sinDwn + sinUp);
-    int up_dwn_lft_rght[4];
-    up_dwn_lft_rght[0] = (float)m_iHeight[eye] * u_d_ratio;
-    up_dwn_lft_rght[1] = -((float)m_iHeight[eye] - up_dwn_lft_rght[0]);
-    up_dwn_lft_rght[2] = -((float)m_iWidth[eye] * r_l_ratio);
-    up_dwn_lft_rght[3] = (float)m_iWidth[eye] + up_dwn_lft_rght[2];
+    cl_int up_dwn_lft_rght[4];
+    up_dwn_lft_rght[0] = (cl_int)((float)m_iHeight[eye] * u_d_ratio);
+    up_dwn_lft_rght[1] = (cl_int)(-((float)m_iHeight[eye] - up_dwn_lft_rght[0]));
+    up_dwn_lft_rght[2] = (cl_int)(-((float)m_iWidth[eye] * r_l_ratio));
+    up_dwn_lft_rght[3] = (cl_int)((float)m_iWidth[eye] + up_dwn_lft_rght[2]);
 
-    clEnqueueWriteBuffer(m_queue, m_clFOV[eye], CL_TRUE, 0, 4*sizeof(int), up_dwn_lft_rght, 0, NULL, NULL);
+    clEnqueueWriteBuffer(m_queue, m_clFOV[eye], CL_TRUE, 0, 4*sizeof(cl_int), up_dwn_lft_rght, 0, NULL, NULL);
 }
 
 void I3CRenderingEngine::setTexture(GLuint texId, int eye)
@@ -161,18 +161,22 @@ void I3CRenderingEngine::render(int eye)
     float xCornersRotated[8];
     float yCornersRotated[8];
     float zCornersRotated[8];
+    cl_float3 cornerRotated[8];
     m_transform.computeTransform(xCornersRotated, yCornersRotated, zCornersRotated);
+    for(int i = 0; i < 8; i++){
+        cornerRotated[i].s[0] = xCornersRotated[i];
+        cornerRotated[i].s[1] = yCornersRotated[i];
+        cornerRotated[i].s[2] = zCornersRotated[i];
+    }
 
-    clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 0, 8*sizeof(float), xCornersRotated, 0, NULL, NULL);
-    clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 8*sizeof(float), 8*sizeof(float), yCornersRotated, 0, NULL, NULL);
-    clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 2*8*sizeof(float), 8*sizeof(float), zCornersRotated, 0, NULL, NULL);
+    clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 0, 8*sizeof(cl_float3), cornerRotated, 0, NULL, NULL);
 
     sort(zCornersRotated, m_ucCubeDstSorted);   //Reference to |m_ucCubeDstSorted| known be every reference cube
     //Reference to |m_clCubeDstSorted| known be every pixel cube
-    clEnqueueWriteBuffer(m_queue, m_clCubeDstSorted, CL_TRUE, 0, 8*sizeof(unsigned char), m_ucCubeDstSorted, 0, NULL, NULL);
+    clEnqueueWriteBuffer(m_queue, m_clCubeDstSorted, CL_TRUE, 0, 8*sizeof(cl_uchar), m_ucCubeDstSorted, 0, NULL, NULL);
 
     //Render!
-    m_Cubes[m_iTotalNumberOfCubes-1]->render(&m_clRotatedCorners, &m_clTexture[eye], &m_clFOV[eye]);
+    ((I3CReferenceCube*)m_Cubes[m_iTotalNumberOfCubes-1])->render(&m_clRotatedCorners, &m_clTexture[eye], &m_clFOV[eye]);
 
     //Give back texture ownership to OpenGL
     clFinish(m_queue);
@@ -236,10 +240,10 @@ void I3CRenderingEngine::createKernels()
 
 void I3CRenderingEngine::allocateMemory()
 {
-    m_clFOV[0] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(int), NULL, NULL);
-    m_clFOV[1] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(int), NULL, NULL);
-    m_clCubeDstSorted = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 8*sizeof(unsigned char), NULL, NULL);
-    m_clRotatedCorners = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 3*8*sizeof(float), NULL, NULL);
+    m_clFOV[0] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(cl_int), NULL, NULL);
+    m_clFOV[1] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(cl_int), NULL, NULL);
+    m_clCubeDstSorted = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 8*sizeof(cl_uchar), NULL, NULL);
+    m_clRotatedCorners = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 8*sizeof(cl_float3), NULL, NULL);
 }
 
 Sources_OCL I3CRenderingEngine::loadCLSource(char* filename, unsigned int max_length)
