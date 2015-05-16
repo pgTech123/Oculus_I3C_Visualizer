@@ -79,8 +79,8 @@ void OculusApp::startRendering(std::string filename)
     m_RenderingEngine->openFile(filename);
 
     //Setting Parameters
-    this->initParameters();
     this->createRenderingTexture();
+    this->initParameters();     //Texture must be called before setting FOV
 
     //Start to loop
     connect(m_timer, SIGNAL(timeout()), this, SLOT(RenderScene()));

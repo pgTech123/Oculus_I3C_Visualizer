@@ -12,18 +12,16 @@
 
 #include "i3creferencecube.h"
 
-I3CReferenceCube::I3CReferenceCube(cl_mem *texture,
-                                   cl_mem *FOV,
+I3CReferenceCube::I3CReferenceCube(cl_context *context,
                                    cl_command_queue *commandQueue,
                                    unsigned char *uc_cubeDstSorted,
-                                   cl_kernel *computeChildCornersKernel):I3CCube(texture, FOV, commandQueue)
+                                   cl_kernel *computeChildCornersKernel):I3CCube(context, commandQueue)
 {
     m_pArrChildCubes = NULL;
     m_ptrArrCubeDstSorted = uc_cubeDstSorted;
     m_clComputeChildCornersKernel = computeChildCornersKernel;
     for(int i = 0; i < 8; i++){
-        m_clChildCorners[i] = NULL;
-        //TODO: allocate cl_memory for corners
+        m_clChildCorners[i] = clCreateBuffer(*m_clContext, CL_MEM_READ_WRITE, 3*27*sizeof(float), NULL, NULL);
     }
 }
 
@@ -59,17 +57,22 @@ void I3CReferenceCube::addReferenceCube(unsigned char ucMap, I3CCube** p_ChildCu
     }
 }
 
-void I3CReferenceCube::render(cl_mem *corners)
+void I3CReferenceCube::render(cl_mem *corners, cl_mem *texture, cl_mem *FOV)
 {
+    //Set parent
+
+    //Set Childs
+
     //Compute subcorners
-    //TODO:
-    //setarg
-    //enqueueKernel
+    /*size_t workItems = 27;
+    error = clEnqueueNDRangeKernel(*m_clCommandQueue, *computeChildCornersKernel, 1, NULL,
+                                   &workItems , NULL, 0, NULL, NULL);*/
 
     //Render Childs
     for(int i = 0; i < 8; i++){     //WARNING: |i| Must NOT be higher than 8
         if((m_ucMap & (0x01 << (*(m_ptrArrCubeDstSorted+i))))){
-            m_pArrChildCubes[*(m_ptrArrCubeDstSorted+i)]->render(&m_clChildCorners[*(m_ptrArrCubeDstSorted+i)]);
+            m_pArrChildCubes[*(m_ptrArrCubeDstSorted+i)]->render(&m_clChildCorners[*(m_ptrArrCubeDstSorted+i)],
+                                                                 texture, FOV);
         }
     }
 }

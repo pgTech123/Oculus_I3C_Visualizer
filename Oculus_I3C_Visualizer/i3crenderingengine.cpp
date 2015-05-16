@@ -25,14 +25,16 @@ I3CRenderingEngine::I3CRenderingEngine(HDC hDC, HGLRC hRC)
     m_clFOV[0] = NULL;
     m_clFOV[1] = NULL;
     m_clCubeDstSorted = NULL;
+    m_clRotatedCorners = NULL;
     m_kernelClearImage[0] = NULL;
     m_kernelClearImage[1] = NULL;
     m_kernelComputeChildCorners = NULL;
     m_program = NULL;
 
+    //Instanciate OCL elements
     getOpenGLDevice(hDC, hRC);
 
-    //Image init
+    //Image File
     m_iArrCubeAtLevel = NULL;
     m_Cubes = NULL;
 }
@@ -66,6 +68,9 @@ I3CRenderingEngine::~I3CRenderingEngine()
     if(m_clCubeDstSorted != NULL){
         clReleaseMemObject(m_clCubeDstSorted);
     }
+    if(m_clRotatedCorners != NULL){
+        clReleaseMemObject(m_clRotatedCorners);
+    }
     clReleaseCommandQueue(m_queue);
     clReleaseContext(m_context);
     clReleaseDevice(m_device);
@@ -92,7 +97,20 @@ int I3CRenderingEngine::openFile(std::string filename)
 
 void I3CRenderingEngine::setFOV(float up, float down, float right, float left, int eye)
 {
+    float sinDwn = sin(down);
+    float sinUp = sin(up);
+    float sinRight = sin(right);
+    float sinLeft = sin(left);
 
+    float r_l_ratio = sinLeft / (sinRight + sinLeft);
+    float u_d_ratio = sinUp / (sinDwn + sinUp);
+    int up_dwn_lft_rght[4];
+    up_dwn_lft_rght[0] = (float)m_iHeight[eye] * u_d_ratio;
+    up_dwn_lft_rght[1] = -((float)m_iHeight[eye] - up_dwn_lft_rght[0]);
+    up_dwn_lft_rght[2] = -((float)m_iWidth[eye] * r_l_ratio);
+    up_dwn_lft_rght[3] = (float)m_iWidth[eye] + up_dwn_lft_rght[2];
+
+    clEnqueueWriteBuffer(m_queue, m_clFOV[eye], CL_TRUE, 0, 4*sizeof(int), up_dwn_lft_rght, 0, NULL, NULL);
 }
 
 void I3CRenderingEngine::setTexture(GLuint texId, int eye)
@@ -115,12 +133,12 @@ void I3CRenderingEngine::setTexture(GLuint texId, int eye)
 
 void I3CRenderingEngine::setPosition(float x, float y, float z)
 {
-
+    m_transform.setTranslation(x, y, z);
 }
 
 void I3CRenderingEngine::setOrientation(float yaw, float pitch, float roll)
 {
-
+    m_transform.setAngles(yaw, pitch, roll);
 }
 
 void I3CRenderingEngine::render(int eye)
@@ -132,15 +150,29 @@ void I3CRenderingEngine::render(int eye)
         std::cout << "Aquirering error..." << std::endl;
     }
 
-    //Clear Texture
+    //Fill Texture with void (black)
     size_t a[2] = {m_iWidth[eye], m_iHeight[eye]};
     error = clEnqueueNDRangeKernel(m_queue, m_kernelClearImage[eye], 2, NULL, a , NULL, 0, NULL, NULL);
     if(error != CL_SUCCESS){
         std::cout << "Task error..." << std::endl;
     }
+
+    //Compute transform
+    float xCornersRotated[8];
+    float yCornersRotated[8];
+    float zCornersRotated[8];
+    m_transform.computeTransform(xCornersRotated, yCornersRotated, zCornersRotated);
+
+    clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 0, 8*sizeof(float), xCornersRotated, 0, NULL, NULL);
+    clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 8*sizeof(float), 8*sizeof(float), yCornersRotated, 0, NULL, NULL);
+    clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 2*8*sizeof(float), 8*sizeof(float), zCornersRotated, 0, NULL, NULL);
+
+    sort(zCornersRotated, m_ucCubeDstSorted);   //Reference to |m_ucCubeDstSorted| known be every reference cube
+    //Reference to |m_clCubeDstSorted| known be every pixel cube
+    clEnqueueWriteBuffer(m_queue, m_clCubeDstSorted, CL_TRUE, 0, 8*sizeof(unsigned char), m_ucCubeDstSorted, 0, NULL, NULL);
+
     //Render!
-    //TODO: call render on last cube in the array
-    //m_ucCubeDstSorted and cl equivalent
+    m_Cubes[m_iTotalNumberOfCubes-1]->render(&m_clRotatedCorners, &m_clTexture[eye], &m_clFOV[eye]);
 
     //Give back texture ownership to OpenGL
     clFinish(m_queue);
@@ -150,6 +182,7 @@ void I3CRenderingEngine::render(int eye)
     }
 }
 
+//This function is meant to be called only once at the begining (i.e. in the constructor)
 void I3CRenderingEngine::getOpenGLDevice(HDC hDC, HGLRC hRC)
 {
     //WARNING: No error handeling in this function...
@@ -171,6 +204,7 @@ void I3CRenderingEngine::getOpenGLDevice(HDC hDC, HGLRC hRC)
     m_context = clCreateContext(props, 1, &m_device, 0, 0, NULL);
     m_queue = clCreateCommandQueue(m_context, m_device, CL_QUEUE_PROFILING_ENABLE, NULL);
     this->createKernels();
+    this->allocateMemory();
 }
 
 void I3CRenderingEngine::createKernels()
@@ -198,6 +232,14 @@ void I3CRenderingEngine::createKernels()
     else{
         std::cout << "ERROR: CL Sources NOT found" << std::endl;   //DEBUG
     }
+}
+
+void I3CRenderingEngine::allocateMemory()
+{
+    m_clFOV[0] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(int), NULL, NULL);
+    m_clFOV[1] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(int), NULL, NULL);
+    m_clCubeDstSorted = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 8*sizeof(unsigned char), NULL, NULL);
+    m_clRotatedCorners = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 3*8*sizeof(float), NULL, NULL);
 }
 
 Sources_OCL I3CRenderingEngine::loadCLSource(char* filename, unsigned int max_length)
@@ -328,7 +370,7 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
     for(int i = 0; i < m_iArrCubeAtLevel[0]; i++)
     {
         // Create Cube
-        m_Cubes[iCubeBeingWritten] = new I3CPixelCube(m_clTexture, m_clFOV, &m_queue, &m_clCubeDstSorted);
+        m_Cubes[iCubeBeingWritten] = new I3CPixelCube(&m_context, &m_queue, &m_clCubeDstSorted);
         iError = readMap(file, &ucMap, &iNumOfPixels);
         if(iError != I3C_SUCCESS){
             return iError;
@@ -386,8 +428,8 @@ int I3CRenderingEngine::readIndexCubes(std::fstream *file)
             }
             else{*/
 
-            m_Cubes[iCubeBeingWritten] = new I3CReferenceCube(m_clTexture, m_clFOV, &m_queue,
-                                                              m_ucCubeDstSorted, &m_kernelComputeChildCorners);
+            m_Cubes[iCubeBeingWritten] = new I3CReferenceCube(&m_context, &m_queue, m_ucCubeDstSorted,
+                                                              &m_kernelComputeChildCorners);
             ((I3CReferenceCube*)m_Cubes[iCubeBeingWritten])->addReferenceCube(ucMap, &m_Cubes[iAddressCubesCursorOffset]);
 
 

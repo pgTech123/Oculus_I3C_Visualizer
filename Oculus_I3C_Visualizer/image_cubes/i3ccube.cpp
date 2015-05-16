@@ -12,16 +12,12 @@
  * *********************************************************/
 
 
-//TODO: TEXTURE AND FOV Can be exclusive to pixelCube: no need to be here...
-
 #include "i3ccube.h"
 
-I3CCube::I3CCube(cl_mem *texture,
-                 cl_mem *FOV,
+I3CCube::I3CCube(cl_context *context,
                  cl_command_queue *commandQueue)
 {
-    m_clTexture = texture;
-    m_clFOV = FOV;
+    m_clContext = context;
     m_clCommandQueue = commandQueue;
 }
 

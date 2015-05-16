@@ -19,15 +19,14 @@
 class I3CPixelCube : public I3CCube
 {
 public:
-    I3CPixelCube(cl_mem *texture,
-                 cl_mem *FOV,
+    I3CPixelCube(cl_context *context,
                  cl_command_queue *commandQueue,
                  cl_mem *cubeDstSorted);
     ~I3CPixelCube();
 
     void addPixelsCube(unsigned char ucMap, int* ucRed, int* ucGreen, int* ucBlue);
 
-    void render(cl_mem *corners);
+    void render(cl_mem *corners, cl_mem *texture, cl_mem *FOV);
 
 private:
     //Pixel level cube

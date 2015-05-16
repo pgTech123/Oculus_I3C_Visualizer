@@ -20,8 +20,7 @@
 class I3CReferenceCube : public I3CCube
 {
 public:
-    I3CReferenceCube(cl_mem *texture,
-                     cl_mem *FOV,
+    I3CReferenceCube(cl_context *context,
                      cl_command_queue *commandQueue,
                      unsigned char *uc_cubeDstSorted,
                      cl_kernel *computeChildCornersKernel);  //Array of size 8
@@ -29,7 +28,7 @@ public:
 
     void addReferenceCube(unsigned char ucMap, I3CCube** p_ChildCubeRef);
 
-    void render(cl_mem *corners);
+    void render(cl_mem *corners, cl_mem *texture, cl_mem *FOV);
 
 private:
     //Reference cube

@@ -19,20 +19,18 @@
 class I3CCube
 {
 public:
-    I3CCube(cl_mem *texture,
-            cl_mem *FOV,
+    I3CCube(cl_context *context,
             cl_command_queue *commandQueue);
 
     int getHierarchyLevel();
 
-    virtual void render(cl_mem *corners) = 0;
+    virtual void render(cl_mem *corners, cl_mem *texture, cl_mem *FOV) = 0;
 
 protected:
     int m_iHierarchyLevel;
     unsigned char m_ucMap;
 
-    cl_mem *m_clTexture;
-    cl_mem *m_clFOV;
+    cl_context *m_clContext;
     cl_command_queue *m_clCommandQueue;
 };
 

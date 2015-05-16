@@ -11,10 +11,9 @@
 
 #include "i3cpixelcube.h"
 
-I3CPixelCube::I3CPixelCube(cl_mem *texture,     //Where |texture| is an array size 2
-                           cl_mem *FOV,         //Where |FOV| is an array size 2
+I3CPixelCube::I3CPixelCube(cl_context *context,
                            cl_command_queue *commandQueue,
-                           cl_mem *cubeDstSorted):I3CCube(texture, FOV, commandQueue)
+                           cl_mem *cubeDstSorted):I3CCube(context, commandQueue)
 {
     m_ucRed = NULL;
     m_ucGreen = NULL;
@@ -58,7 +57,7 @@ void I3CPixelCube::addPixelsCube(unsigned char ucMap, int* ucRed, int* ucGreen, 
     }
 }
 
-void I3CPixelCube::render(cl_mem *corners)
+void I3CPixelCube::render(cl_mem *corners, cl_mem *texture, cl_mem *FOV)
 {
-
+    //To debug what has been done previously: draw black points on each corners
 }

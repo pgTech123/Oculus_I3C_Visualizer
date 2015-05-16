@@ -78,8 +78,11 @@ public:
     void render(int eye = 0);
 
 private:
+    //This function is meant to be called only once at the begining (i.e. in the constructor)
     void getOpenGLDevice(HDC hDC, HGLRC hRC);
+
     void createKernels();
+    void allocateMemory();
 
     // If Sources_OCL.success is false, an error was encountered and the structure
     // may not be properly set.
@@ -111,6 +114,7 @@ private:
     cl_mem m_clTexture[2];  //Left/Right
     cl_mem m_clFOV[2];      //Left/Right
     cl_mem m_clCubeDstSorted;
+    cl_mem m_clRotatedCorners;
 
     //Code that runs on GPU
     cl_program m_program;
