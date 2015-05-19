@@ -115,11 +115,14 @@ private:
     cl_mem m_clFOV[2];      //Left/Right
     cl_mem m_clCubeDstSorted;
     cl_mem m_clRotatedCorners;
+    cl_mem m_clPixelPosition;
+    cl_mem m_clPixelColor;
 
     //Code that runs on GPU
     cl_program m_program;
     cl_kernel m_kernelClearImage[2];  //Left/Right
     cl_kernel m_kernelComputeChildCorners;
+    cl_kernel m_drawPixelKernel;
 
     //--------  IMAGE  ----------
     Transform m_transform;

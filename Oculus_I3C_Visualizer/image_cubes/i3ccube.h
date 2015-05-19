@@ -16,6 +16,17 @@
 
 #include <CL/cl.h>
 
+class Coordinate
+{
+public:
+    float x;
+    float y;
+    float z;
+
+    void fromMidCoord(Coordinate coord1, Coordinate coord2);
+};
+
+
 class I3CCube
 {
 public:
@@ -25,7 +36,8 @@ public:
 
     int getHierarchyLevel();
 
-    virtual void render(cl_mem *corners, cl_mem *texture, cl_mem *FOV) = 0;
+    virtual void render(cl_mem *corners) = 0;
+    virtual void render(Coordinate corners[8]) = 0;
 
 protected:
     int m_iHierarchyLevel;

@@ -13,12 +13,17 @@
 
 I3CPixelCube::I3CPixelCube(cl_context *context,
                            cl_command_queue *commandQueue,
-                           cl_mem *cubeDstSorted):I3CCube(context, commandQueue)
+                           cl_kernel *drawPixelKernel,
+                           cl_mem *pixelPosition,
+                           cl_mem *pixelColor):I3CCube(context, commandQueue)
 {
     m_ucRed = NULL;
     m_ucGreen = NULL;
     m_ucBlue = NULL;
-    m_clCubeDstSorted = cubeDstSorted;
+
+    /*m_pixelPosition = pixelPosition;
+    m_pixelColor = pixelColor;*/
+    m_drawPixelKernel = drawPixelKernel;
 }
 
 I3CPixelCube::~I3CPixelCube()
@@ -57,7 +62,21 @@ void I3CPixelCube::addPixelsCube(unsigned char ucMap, int* ucRed, int* ucGreen, 
     }
 }
 
-void I3CPixelCube::render(cl_mem *corners, cl_mem *texture, cl_mem *FOV)
+void I3CPixelCube::render(cl_mem *corners)
 {
     //To debug what has been done previously: draw black points on each corners
+}
+
+void I3CPixelCube::render(Coordinate corners[8])
+{
+    cl_float4 colorTmp = {0.0, 0.0, 0.0, 1.0};
+    cl_int2 pos = {500, 500};
+
+    /*clEnqueueWriteBuffer(*m_clCommandQueue, *m_pixelColor, CL_TRUE, 0, sizeof(colorTmp),
+                         &colorTmp, 0, NULL, NULL);
+    clEnqueueWriteBuffer(*m_clCommandQueue, *m_pixelPosition, CL_TRUE, 0, sizeof(pos),
+                         &pos, 0, NULL, NULL);*/
+    size_t workItems = 1;
+    cl_int error = clEnqueueNDRangeKernel(*m_clCommandQueue, *m_drawPixelKernel, 1, NULL,
+                           &workItems , NULL, 0, NULL, NULL);
 }

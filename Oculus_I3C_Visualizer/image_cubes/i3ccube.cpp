@@ -14,6 +14,14 @@
 
 #include "i3ccube.h"
 
+//TODO: optimize this in assembly
+void Coordinate::fromMidCoord(Coordinate coord1, Coordinate coord2)
+{
+    this->x = (coord1.x + coord2.x) / 2;
+    this->y = (coord1.y + coord2.y) / 2;
+    this->z = (coord1.z + coord2.z) / 2;
+}
+
 I3CCube::I3CCube(cl_context *context,
                  cl_command_queue *commandQueue)
 {

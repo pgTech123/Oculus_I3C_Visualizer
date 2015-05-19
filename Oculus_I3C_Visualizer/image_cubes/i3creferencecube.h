@@ -17,6 +17,8 @@
 #include <CL/cl.h>
 #include "i3ccube.h"
 
+
+
 class I3CReferenceCube : public I3CCube
 {
 public:
@@ -28,15 +30,24 @@ public:
 
     void addReferenceCube(unsigned char ucMap, I3CCube** p_ChildCubeRef);
 
-    void render(cl_mem *corners, cl_mem *texture, cl_mem *FOV);
+    void render(cl_mem *corners);
+    void render(Coordinate corners[8]);
+
+private:
+    void computeSubcorners();
+    void renderChildIfZPositive(unsigned char cubeId);
 
 private:
     //Reference cube
     I3CCube** m_pArrChildCubes;
 
+    //GPU implementation
     cl_uchar *m_ptrArrCubeDstSorted;
     cl_mem m_clChildCorners[8];
     cl_kernel *m_clComputeChildCornersKernel;
+
+    //CPU implementation
+    Coordinate m_fArrSubcorners[27];
 };
 
 #endif // I3CREFERENCECUBE_H
