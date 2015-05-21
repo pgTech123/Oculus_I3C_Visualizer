@@ -29,8 +29,6 @@
 #include <CL/cl.h>
 #include <CL/cl_gl.h>
 
-#include "image_cubes/i3cpixelcube.h"
-#include "image_cubes/i3creferencecube.h"
 #include "utils/gvtransform.h"
 #include "utils/gvbinaryfunctions.h"
 
@@ -110,31 +108,30 @@ private:
     cl_context m_context;
     cl_command_queue m_queue;
 
-    //Memory
+    //Memory Global
     cl_mem m_clTexture[2];  //Left/Right
     cl_mem m_clFOV[2];      //Left/Right
-    cl_mem m_clCubeDstSorted;
+    cl_mem m_clReferenceCubeMap;
+    cl_mem m_clPixel;
+    cl_mem m_clNumOfLevel;
+
     cl_mem m_clRotatedCorners;
-    cl_mem m_clPixelPosition;
-    cl_mem m_clPixelColor;
+    cl_mem m_clBoundingRect;
+    cl_mem m_clChildId_memStatusBit;
 
     //Code that runs on GPU
     cl_program m_program;
-    cl_kernel m_kernelClearImage[2];  //Left/Right
-    cl_kernel m_kernelComputeChildCorners;
-    cl_kernel m_drawPixelKernel;
+    cl_kernel m_kernelClearCornersComputed;
+    cl_kernel m_kernelRender[2];  //Left/Right
 
     //--------  IMAGE  ----------
     Transform m_transform;
-    cl_uchar m_ucCubeDstSorted[8];
 
-    //Image parameters
+    //Image Property
     int m_iSideLenght;
     int m_iNumberOfLevels;
     int *m_iArrCubeAtLevel;
-
     int m_iTotalNumberOfCubes;
-    I3CCube **m_Cubes;
 };
 
 #endif // I3CRENDERINGENGINE_H

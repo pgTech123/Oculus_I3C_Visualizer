@@ -19,50 +19,54 @@
 
 I3CRenderingEngine::I3CRenderingEngine(HDC hDC, HGLRC hRC)
 {
-    //OpenCL init
+    //OpenCL Initialisation
+    //Memory
     m_clTexture[0] = NULL;
     m_clTexture[1] = NULL;
     m_clFOV[0] = NULL;
     m_clFOV[1] = NULL;
-
-    m_clCubeDstSorted = NULL;
     m_clRotatedCorners = NULL;
-    m_clPixelPosition = NULL;
-    m_clPixelColor = NULL;
+    m_clReferenceCubeMap = NULL;
+    m_clPixel = NULL;
+    m_clNumOfLevel = NULL;
 
-    m_kernelClearImage[0] = NULL;
-    m_kernelClearImage[1] = NULL;
-    m_kernelComputeChildCorners = NULL;
-    m_drawPixelKernel = NULL;
+    m_clBoundingRect = NULL;
+    m_clChildId_memStatusBit =NULL;
 
+    //Program
     m_program = NULL;
+
+    //Kernels
+    m_kernelClearCornersComputed = NULL;
+    m_kernelRender[0] = NULL;
+    m_kernelRender[1] = NULL;
 
     //Instanciate OCL elements
     getOpenGLDevice(hDC, hRC);
 
-    //Image File
+    //Image File Initialisation
     m_iArrCubeAtLevel = NULL;
-    m_Cubes = NULL;
 }
 
 I3CRenderingEngine::~I3CRenderingEngine()
 {
-    //OpenCL release
-    if(m_kernelClearImage[0] != NULL){
-        clReleaseKernel(m_kernelClearImage[0]);
+    //Release Kernels
+    if(m_kernelClearCornersComputed != NULL){
+        clReleaseKernel(m_kernelClearCornersComputed);
     }
-    if(m_kernelClearImage[1] != NULL){
-        clReleaseKernel(m_kernelClearImage[1]);
+    if(m_kernelRender[0] != NULL){
+        clReleaseKernel(m_kernelRender[0]);
     }
-    if(m_kernelComputeChildCorners != NULL){
-        clReleaseKernel(m_kernelComputeChildCorners);
+    if(m_kernelRender[1] != NULL){
+        clReleaseKernel(m_kernelRender[1]);
     }
-    if(m_drawPixelKernel != NULL){
-        clReleaseKernel(m_drawPixelKernel);
-    }
+
+    //Release Program
     if(m_program != NULL){
         clReleaseProgram(m_program);
     }
+
+    //Release Memory
     if(m_clTexture[0] != NULL){
         clReleaseMemObject(m_clTexture[0]);
     }
@@ -75,24 +79,24 @@ I3CRenderingEngine::~I3CRenderingEngine()
     if(m_clFOV[1] != NULL){
         clReleaseMemObject(m_clFOV[1]);
     }
-    if(m_clCubeDstSorted != NULL){
-        clReleaseMemObject(m_clCubeDstSorted);
-    }
     if(m_clRotatedCorners != NULL){
         clReleaseMemObject(m_clRotatedCorners);
     }
-    if(m_clPixelColor != NULL){
-        clReleaseMemObject(m_clRotatedCorners);
+    if(m_clNumOfLevel != NULL){
+        clReleaseMemObject(m_clNumOfLevel);
     }
-    if(m_clPixelPosition != NULL){
-        clReleaseMemObject(m_clRotatedCorners);
+    if(m_clBoundingRect != NULL){
+        clReleaseMemObject(m_clBoundingRect);
     }
+    if(m_clChildId_memStatusBit != NULL){
+        clReleaseMemObject(m_clChildId_memStatusBit);
+    }
+
+    clearCubesInMemory();
+
     clReleaseCommandQueue(m_queue);
     clReleaseContext(m_context);
     clReleaseDevice(m_device);
-
-    //Release Image Data
-    clearCubesInMemory();
 }
 
 int I3CRenderingEngine::openFile(std::string filename)
@@ -128,6 +132,8 @@ void I3CRenderingEngine::setFOV(float up, float down, float right, float left, i
 
     //Set values computed on an OpenCL Buffer
     clEnqueueWriteBuffer(m_queue, m_clFOV[eye], CL_TRUE, 0, 4*sizeof(cl_int), up_dwn_lft_rght, 0, NULL, NULL);
+    clSetKernelArg(m_kernelRender[eye], 7, sizeof(m_clFOV[eye]), &m_clFOV[eye]);
+
 }
 
 void I3CRenderingEngine::setTexture(GLuint texId, int eye)
@@ -141,7 +147,7 @@ void I3CRenderingEngine::setTexture(GLuint texId, int eye)
     m_clTexture[eye] = clCreateFromGLTexture(m_context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, texId, NULL);
 
     //Set Texture Argument
-    clSetKernelArg(m_kernelClearImage[eye], 0, sizeof(m_clTexture[eye]), &m_clTexture[eye]);
+    clSetKernelArg(m_kernelRender[eye], 0, sizeof(m_clTexture[eye]), &m_clTexture[eye]);
 
     //Get data
     glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &m_iWidth[eye]);
@@ -167,45 +173,30 @@ void I3CRenderingEngine::render(int eye)
         std::cout << "Aquirering error..." << std::endl;
     }
 
-    //Clear Previous Texture
-    size_t a[2] = {m_iWidth[eye], m_iHeight[eye]};
-    error = clEnqueueNDRangeKernel(m_queue, m_kernelClearImage[eye], 2, NULL, a , NULL, 0, NULL, NULL);
-    if(error != CL_SUCCESS){
-        std::cout << "Task error..." << std::endl;
-    }
+    //Clear GPU Memory
+    size_t workItems[1] = {m_iTotalNumberOfCubes};
+    error = clEnqueueNDRangeKernel(m_queue, m_kernelRender[eye], 1, NULL, workItems , NULL, 0, NULL, NULL);
 
-    //Set Arguments for drawing kernel
-    clSetKernelArg(m_drawPixelKernel, 0, sizeof(m_clTexture[eye]), (void *)&m_clTexture[eye]);
-    clSetKernelArg(m_drawPixelKernel, 1, sizeof(m_clFOV[eye]), (void *)&m_clFOV[eye]);
-
-    //Compute transform
+    //Compute transforms
     float xCornersRotated[8];
     float yCornersRotated[8];
     float zCornersRotated[8];
     cl_float3 cornerRotated[8];
-    Coordinate cornerRotatedCoord[8];
-
     m_transform.computeTransform(xCornersRotated, yCornersRotated, zCornersRotated);
     for(int i = 0; i < 8; i++){
         cornerRotated[i].s[0] = xCornersRotated[i];
         cornerRotated[i].s[1] = yCornersRotated[i];
         cornerRotated[i].s[2] = zCornersRotated[i];
-
-        cornerRotatedCoord[i].x = xCornersRotated[i];
-        cornerRotatedCoord[i].y = yCornersRotated[i];
-        cornerRotatedCoord[i].z = zCornersRotated[i];
     }
-
     clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 0, 8*sizeof(cl_float3),
                          cornerRotated, 0, NULL, NULL);
 
-    sort(zCornersRotated, m_ucCubeDstSorted);
-    clEnqueueWriteBuffer(m_queue, m_clCubeDstSorted, CL_TRUE, 0, 8*sizeof(cl_uchar),
-                         m_ucCubeDstSorted, 0, NULL, NULL);
-
     //Render!
-    //((I3CReferenceCube*)m_Cubes[m_iTotalNumberOfCubes-1])->render(cornerRotatedCoord);
-    ((I3CReferenceCube*)m_Cubes[m_iTotalNumberOfCubes-1])->render(&m_clRotatedCorners);
+    size_t a[2] = {m_iWidth[eye], m_iHeight[eye]};
+    error = clEnqueueNDRangeKernel(m_queue, m_kernelRender[eye], 2, NULL, a , NULL, 0, NULL, NULL);
+    if(error != CL_SUCCESS){
+        std::cout << "Task error..." << std::endl;
+    }
 
     //Give back texture ownership to OpenGL
     clFinish(m_queue);
@@ -258,10 +249,9 @@ void I3CRenderingEngine::createKernels()
         }
 
         //Create Kernels
-        m_kernelClearImage[0] = clCreateKernel(m_program, "clearImage", NULL);  //Left Texture
-        m_kernelClearImage[1] = clCreateKernel(m_program, "clearImage", NULL);  //Right Texture
-        m_kernelComputeChildCorners = clCreateKernel(m_program, "computeSubCorners", NULL);
-        m_drawPixelKernel = clCreateKernel(m_program, "drawPixel", NULL);
+        m_kernelClearCornersComputed = clCreateKernel(m_program, "clearMemoryBit", NULL);
+        m_kernelRender[0] = clCreateKernel(m_program, "render", NULL);  //Left Texture
+        m_kernelRender[1] = clCreateKernel(m_program, "render", NULL);  //Right Texture
     }
     else{
         std::cout << "ERROR: CL Sources NOT found" << std::endl;   //DEBUG
@@ -272,14 +262,7 @@ void I3CRenderingEngine::allocateMemory()
 {
     m_clFOV[0] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(cl_int), NULL, NULL);
     m_clFOV[1] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(cl_int), NULL, NULL);
-    m_clCubeDstSorted = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 8*sizeof(cl_uchar), NULL, NULL);
-    m_clRotatedCorners = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 8*sizeof(cl_float3), NULL, NULL);
-    m_clPixelColor = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_float4), NULL, NULL);
-    m_clPixelPosition = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_int2), NULL, NULL);
-
-    clSetKernelArg(m_drawPixelKernel, 2, sizeof(m_clPixelPosition), (void *)&m_clPixelPosition);
-    clSetKernelArg(m_drawPixelKernel, 3, sizeof(m_clPixelColor), (void *)&m_clPixelColor);
-    clSetKernelArg(m_drawPixelKernel, 4, 8*sizeof(cl_uchar), (void *)&m_clCubeDstSorted);
+    m_clNumOfLevel = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, NULL);
 }
 
 Sources_OCL I3CRenderingEngine::loadCLSource(char* filename, unsigned int max_length)
@@ -353,6 +336,12 @@ void I3CRenderingEngine::setNumberOfLevels()
     m_iNumberOfLevels = firstHighBit(m_iSideLenght);
     //cout << "Number of Levels: " << m_iNumberOfLevels << endl;    //Debug
 
+    cl_int numOfLevel = (cl_int)m_iNumberOfLevels;
+    clEnqueueWriteBuffer(m_queue, m_clNumOfLevel, CL_TRUE, 0, sizeof(numOfLevel), &numOfLevel, 0, NULL, NULL);
+    clSetKernelArg(m_kernelRender[0], 1, sizeof(m_clNumOfLevel), &m_clNumOfLevel);
+    clSetKernelArg(m_kernelRender[1], 1, sizeof(m_clNumOfLevel), &m_clNumOfLevel);
+
+
     //We assume that we've already made sure that |m_iArrCubeAtLevel| was NULL
     m_iArrCubeAtLevel = new int[m_iNumberOfLevels];
 }
@@ -371,15 +360,26 @@ void I3CRenderingEngine::readNumOfMaps(std::fstream *file)
     }
     //cout << "Number of Cubes: " << m_iTotalNumberOfCubes << endl;  //Debug
 
-    //TO REMOVE
-    //One of the cube is 'this' so we remove 1
-    //m_iTotalNumberOfCubes--;
+    //ReferenceCube contains:  uchar map, uchar level, uchar2 IndexPointToBegining
+    m_clReferenceCubeMap = clCreateBuffer(m_context, CL_MEM_READ_WRITE,
+                                       m_iTotalNumberOfCubes*sizeof(cl_uchar), NULL, NULL);
+    m_clRotatedCorners = clCreateBuffer(m_context, CL_MEM_READ_WRITE,
+                                        8*m_iTotalNumberOfCubes*sizeof(cl_float3), NULL, NULL);
+    m_clBoundingRect = clCreateBuffer(m_context, CL_MEM_READ_WRITE,
+                                        m_iTotalNumberOfCubes*sizeof(cl_int4), NULL, NULL);
+    m_clChildId_memStatusBit = clCreateBuffer(m_context, CL_MEM_READ_WRITE,
+                                        m_iTotalNumberOfCubes*sizeof(cl_int), NULL, NULL);
 
-    //Create Cube Pointer Array (we assume that we've made sure that |m_Cubes| was NULL)
-    m_Cubes = new I3CCube*[m_iTotalNumberOfCubes];
-    for(int i = 0; i < m_iTotalNumberOfCubes; i++){
-        m_Cubes[i] = NULL;
-    }
+    clSetKernelArg(m_kernelRender[0], 4, sizeof(m_clRotatedCorners), &m_clRotatedCorners);
+    clSetKernelArg(m_kernelRender[1], 4, sizeof(m_clRotatedCorners), &m_clRotatedCorners);
+
+    clSetKernelArg(m_kernelRender[0], 5, sizeof(m_clBoundingRect), &m_clBoundingRect);
+    clSetKernelArg(m_kernelRender[1], 5, sizeof(m_clBoundingRect), &m_clBoundingRect);
+
+    clSetKernelArg(m_kernelRender[0], 6, sizeof(m_clChildId_memStatusBit), &m_clChildId_memStatusBit);
+    clSetKernelArg(m_kernelRender[1], 6, sizeof(m_clChildId_memStatusBit), &m_clChildId_memStatusBit);
+    clSetKernelArg(m_kernelClearCornersComputed, 0, sizeof(m_clChildId_memStatusBit), &m_clChildId_memStatusBit);
+
 }
 
 int I3CRenderingEngine::readCubes(std::fstream *file)
@@ -396,24 +396,47 @@ int I3CRenderingEngine::readCubes(std::fstream *file)
     return I3C_SUCCESS;
 }
 
+ //WARNING: THIS WILL POTENTIALLY BE REALLY SLOW -> Optimisation to be done HERE!!!
 int I3CRenderingEngine::readPixelCubes(std::fstream *file)
 {
     unsigned char ucMap = 0;
+    cl_uchar *map = new cl_uchar[m_iArrCubeAtLevel[0]];
+
     int iBufRedArr[8];
     int iBufGreenArr[8];
     int iBufBlueArr[8];
-    int iCubeBeingWritten = 0;
+    cl_float3 pixel[8];
+
+    int iPixelOffset = 0;
     int iNumOfPixels;
+    int iTotalPixels = 0;
+
     int iError;
 
-    //Read Pixel Cubes
+    //Keep a marker in the file
+    std::fstream *marker = file;
+
+    //Read for dimentions
     for(int i = 0; i < m_iArrCubeAtLevel[0]; i++)
     {
-        // Create Cube
-        m_Cubes[iCubeBeingWritten] = new I3CPixelCube(&m_context, &m_queue, &m_drawPixelKernel,
-                                                      &m_clPixelPosition, &m_clPixelColor);
         iError = readMap(file, &ucMap, &iNumOfPixels);
         if(iError != I3C_SUCCESS){
+            delete[] map;
+            return iError;
+        }
+        iTotalPixels += iNumOfPixels;
+    }
+
+    //Allocate memory
+    m_clPixel = clCreateBuffer(m_context, CL_MEM_READ_WRITE, iTotalPixels*sizeof(cl_float3), NULL, NULL);
+
+    //Read for data
+    file = marker;
+    for(int i = 0; i < m_iArrCubeAtLevel[0]; i++)
+    {
+        iError = readMap(file, &ucMap, &iNumOfPixels);
+        if(iError != I3C_SUCCESS){
+            delete[] map;
             return iError;
         }
 
@@ -423,33 +446,41 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
             *file >> iBufRedArr[j];
             *file >> iBufGreenArr[j];
             *file >> iBufBlueArr[j];
+
+            //Convert to Float3
+            pixel[j].s[0] = (float)(iBufRedArr[j])/255;
+            pixel[j].s[1] = (float)(iBufGreenArr[j])/255;
+            pixel[j].s[2] = (float)(iBufBlueArr[j])/255;
         }
+        map[i] = (cl_uchar)ucMap;
 
-        //TO REMOVE
-        /*if(m_iNumberOfLevels == 1){
-            this->addPixelsCube(ucMap,
-                                iBufRedArr,
-                                iBufGreenArr,
-                                iBufBlueArr);
-        }
-        else{*/
-
-        ((I3CPixelCube*)m_Cubes[iCubeBeingWritten])->addPixelsCube(ucMap,
-                                                              iBufRedArr,
-                                                              iBufGreenArr,
-                                                              iBufBlueArr);
-
-        iCubeBeingWritten ++;
+        //<<<THIS IS SLOW>>>
+        clEnqueueWriteBuffer(m_queue, m_clPixel, CL_TRUE, iPixelOffset*sizeof(cl_float3),
+                             iNumOfPixels*sizeof(cl_float3), pixel, 0, NULL, NULL);
+        iPixelOffset += iNumOfPixels;
     }
+
+    //Copy maps of the first level
+    clEnqueueWriteBuffer(m_queue, m_clReferenceCubeMap, CL_TRUE, 0,
+                          m_iArrCubeAtLevel[0]*sizeof(cl_uchar), map, 0, NULL, NULL);
+
+    //Set args
+    clSetKernelArg(m_kernelRender[0], 2, sizeof(m_clPixel), &m_clPixel);
+    clSetKernelArg(m_kernelRender[1], 2, sizeof(m_clPixel), &m_clPixel);
+
+    delete[] map;
+
     return I3C_SUCCESS;
 }
 
 int I3CRenderingEngine::readIndexCubes(std::fstream *file)
 {
     unsigned char ucMap = 0;
+    int iMapToBeWritten = m_iTotalNumberOfCubes - m_iArrCubeAtLevel[0];
+    cl_uchar *map = new cl_uchar[iMapToBeWritten];
+
+    int index = 0;
     int iNumOfChild = 0;
-    int iAddressCubesCursorOffset = 0;
-    int iCubeBeingWritten = m_iArrCubeAtLevel[0];   //start at index starting right after pixel cubes
     int iError;
 
     for(int level = 1; level < m_iNumberOfLevels; level++)
@@ -458,28 +489,22 @@ int I3CRenderingEngine::readIndexCubes(std::fstream *file)
         {
             iError = readMap(file, &ucMap, &iNumOfChild);
             if(iError != I3C_SUCCESS){
+                delete[] map;
                 return iError;
             }
 
-            //Set cube with child addresses
-            //TO REMOVE
-            /*if(m_iNumberOfLevels == level+1){
-                //cout << "Master Cube" << endl;
-                //this->addReferenceCube(ucMap, &m_pGVImageArray[iAddressCubesCursorOffset]);
-            }
-            else{*/
-
-            m_Cubes[iCubeBeingWritten] = new I3CReferenceCube(&m_context, &m_queue, m_ucCubeDstSorted,
-                                                              &m_kernelComputeChildCorners);
-            ((I3CReferenceCube*)m_Cubes[iCubeBeingWritten])->addReferenceCube(ucMap, &m_Cubes[iAddressCubesCursorOffset]);
-
-
-            // Update Offset
-            iAddressCubesCursorOffset += iNumOfChild;
-            iCubeBeingWritten++;
+            map[index] = (cl_uchar)ucMap;
+            index++;
         }
     }
 
+    clEnqueueWriteBuffer(m_queue, m_clReferenceCubeMap, CL_TRUE, m_iArrCubeAtLevel[0]*sizeof(cl_uchar),
+                          iMapToBeWritten*sizeof(cl_uchar), map, 0, NULL, NULL);
+
+    clSetKernelArg(m_kernelRender[0], 3, sizeof(m_clReferenceCubeMap), &m_clReferenceCubeMap);
+    clSetKernelArg(m_kernelRender[1], 3, sizeof(m_clReferenceCubeMap), &m_clReferenceCubeMap);
+
+    delete[] map;
     return I3C_SUCCESS;
 }
 
@@ -502,17 +527,15 @@ int I3CRenderingEngine::readMap(fstream *file, unsigned char* ucMap, int* iNumOf
 
 void I3CRenderingEngine::clearCubesInMemory()
 {
-    if(m_Cubes != NULL){
-        for(int i = 0; i< m_iTotalNumberOfCubes ; i++){
-            if(m_Cubes[i] != NULL){
-                delete m_Cubes[i];
-            }
-        }
-        delete[] m_Cubes;
-        m_Cubes = NULL;
-    }
     if(m_iArrCubeAtLevel != NULL){
         delete[] m_iArrCubeAtLevel;
         m_iArrCubeAtLevel = NULL;
+    }
+
+    if(m_clReferenceCubeMap != NULL){
+        clReleaseMemObject(m_clReferenceCubeMap);
+    }
+    if(m_clPixel != NULL){
+        clReleaseMemObject(m_clPixel);
     }
 }
