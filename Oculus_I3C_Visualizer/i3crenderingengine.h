@@ -39,6 +39,8 @@
 #define LEFT_EYE    0
 #define RIGHT_EYE   1
 
+#define FOCAL_LENGHT    300
+
 /* Error Definition */
 #define I3C_SUCCESS             0
 #define UNABLE_TO_OPEN_FILE     101
@@ -102,6 +104,7 @@ private:
     //Texture Size
     int m_iWidth[2];  //Left/Right
     int m_iHeight[2]; //Left/Right
+    int FOV[2][4];
 
     //OpenCL General
     cl_device_id m_device;

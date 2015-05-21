@@ -13,12 +13,24 @@
 
 bool boundingRectComputed(int id)
 {
+    if(id == 0){
+        return true;
+    }
+    //TODO: check memStatusBit in |childId_memStatusBit|
     return false;
 }
 
+//BoundingRect order: minx, maxx, miny, maxy
 bool isInBoundingRect(int4 boundingRect, int2 imgCoord)
 {
-    return true;
+    if( boundingRect.x < imgCoord.x  && /*minx < x*/
+        boundingRect.y > imgCoord.x &&  /*maxx > x*/
+        boundingRect.z < imgCoord.y &&  /*miny < y*/
+        boundingRect.w > imgCoord.y     /*maxy > y*/)
+    {
+        return true;
+    }
+    return false;
 }
 
 __kernel void render(__write_only image2d_t resultTexture,
@@ -26,7 +38,7 @@ __kernel void render(__write_only image2d_t resultTexture,
                      __global float3 *pixels,
                      __global uchar *references,
                      __global float3 *cornersArray,
-                     __global int4 *boundingRectArray,
+                     __global int4 *boundingRect,
                      __global int *childId_memStatusBit,
                      __global int *FOV)
 {
@@ -41,18 +53,13 @@ __kernel void render(__write_only image2d_t resultTexture,
 
     for(int level = numberOfLevels[0]; level >= 0; level--)
     {
-        int4 boundingRect;
-
         if(!boundingRectComputed(cubeId)){
             //Compute subcorners
             //Compute bounding rect
             //Push data to global memory
         }
-        else{
-            //Get bounding rect
-        }
 
-        if(!isInBoundingRect(boundingRect, coord)){
+        if(!isInBoundingRect(boundingRect[cubeId], coord)){
             //Stop the loop and fill the pixel with black
             pixelValue = (float4)(0.0, 0.0, 0.0, 1.0);
             break;

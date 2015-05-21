@@ -130,6 +130,11 @@ void I3CRenderingEngine::setFOV(float up, float down, float right, float left, i
     up_dwn_lft_rght[2] = (cl_int)(-((float)m_iWidth[eye] * r_l_ratio));
     up_dwn_lft_rght[3] = (cl_int)((float)m_iWidth[eye] + up_dwn_lft_rght[2]);
 
+    FOV[eye][0] = (int)up_dwn_lft_rght[0];
+    FOV[eye][1] = (int)up_dwn_lft_rght[1];
+    FOV[eye][2] = (int)up_dwn_lft_rght[2];
+    FOV[eye][3] = (int)up_dwn_lft_rght[3];
+
     //Set values computed on an OpenCL Buffer
     clEnqueueWriteBuffer(m_queue, m_clFOV[eye], CL_TRUE, 0, 4*sizeof(cl_int), up_dwn_lft_rght, 0, NULL, NULL);
     clSetKernelArg(m_kernelRender[eye], 7, sizeof(m_clFOV[eye]), &m_clFOV[eye]);
@@ -161,7 +166,7 @@ void I3CRenderingEngine::setPosition(float x, float y, float z)
 
 void I3CRenderingEngine::setOrientation(float yaw, float pitch, float roll)
 {
-    m_transform.setAngles(yaw, pitch, roll);
+    m_transform.setAngles(-pitch, yaw, roll);
 }
 
 void I3CRenderingEngine::render(int eye)
@@ -182,14 +187,43 @@ void I3CRenderingEngine::render(int eye)
     float yCornersRotated[8];
     float zCornersRotated[8];
     cl_float3 cornerRotated[8];
+    int minx = m_iWidth[eye];
+    int maxx = 0;
+    int miny = m_iHeight[eye];
+    int maxy = 0;
+    cl_int4 boundingRect;
     m_transform.computeTransform(xCornersRotated, yCornersRotated, zCornersRotated);
     for(int i = 0; i < 8; i++){
         cornerRotated[i].s[0] = xCornersRotated[i];
         cornerRotated[i].s[1] = yCornersRotated[i];
         cornerRotated[i].s[2] = zCornersRotated[i];
+
+        //Bounding rect
+        int x = (xCornersRotated[i] / zCornersRotated[i]) - FOV[eye][2];
+        int y = (yCornersRotated[i]/ zCornersRotated[i]) - FOV[eye][1];
+        if(x < minx){
+            minx = x;
+        }
+        if(x > maxx){
+            maxx = x;
+        }
+        if(y < miny){
+            miny = y;
+        }
+        if(y > maxy){
+            maxy = y;
+        }
     }
+    boundingRect.s[0] = (cl_int)minx;
+    boundingRect.s[1] = (cl_int)maxx;
+    boundingRect.s[2] = (cl_int)miny;
+    boundingRect.s[3] = (cl_int)maxy;
+
     clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 0, 8*sizeof(cl_float3),
                          cornerRotated, 0, NULL, NULL);
+
+    clEnqueueWriteBuffer(m_queue, m_clBoundingRect, CL_TRUE, 0, sizeof(boundingRect),
+                         &boundingRect, 0, NULL, NULL);
 
     //Render!
     size_t a[2] = {m_iWidth[eye], m_iHeight[eye]};

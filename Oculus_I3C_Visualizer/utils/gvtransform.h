@@ -10,6 +10,7 @@ using namespace std;
 #define PI  3.14159265359
 
 #define DST_OCULUS_ORIGIN   500     //mm
+#define FOCAL_LENGHT        300     //mm    //TODO: Fine tune...
 
 /**************************************************************************
  * The purpose of this class is to abstract the the transformations maths.

@@ -15,9 +15,9 @@ void Transform::setAngles(float dAngleX, float dAngleY, float dAngleZ)
 
 void Transform::setTranslation(float x ,float y, float z)
 {
-    m_dX = x;
-    m_dY = y;
-    m_dZ = z;
+    m_dX = x*FOCAL_LENGHT;
+    m_dY = y*FOCAL_LENGHT;
+    m_dZ = z*FOCAL_LENGHT;
 }
 
 void Transform::setUnrotatedCornersCorners(int iSideLenght)
@@ -70,15 +70,15 @@ void Transform::computeTransform(float *dScreenTransformedCornerX,
     /* Compute Rotated Points */
     for(int i = 0; i < 8; i++)
     {
-        dScreenTransformedCornerX[i] = m_dRotationMatrix[0][0]*(m_iUnrotatedCornerX[i] + m_dX) +
+        dScreenTransformedCornerX[i] = (m_dRotationMatrix[0][0]*(m_iUnrotatedCornerX[i] + m_dX) +
                                        m_dRotationMatrix[0][1]*(m_iUnrotatedCornerY[i] + m_dY) +
                                        m_dRotationMatrix[0][2]*(m_iUnrotatedCornerZ[i] + m_dZ +
-                                                                DST_OCULUS_ORIGIN);
+                                                                DST_OCULUS_ORIGIN))*FOCAL_LENGHT;
 
-        dScreenTransformedCornerY[i] = m_dRotationMatrix[1][0]*(m_iUnrotatedCornerX[i] + m_dX) +
+        dScreenTransformedCornerY[i] = (m_dRotationMatrix[1][0]*(m_iUnrotatedCornerX[i] + m_dX) +
                                        m_dRotationMatrix[1][1]*(m_iUnrotatedCornerY[i] + m_dY) +
                                        m_dRotationMatrix[1][2]*(m_iUnrotatedCornerZ[i] + m_dZ +
-                                                                DST_OCULUS_ORIGIN);
+                                                                DST_OCULUS_ORIGIN))*FOCAL_LENGHT;
 
         dTransformedCornerZ[i] = m_dRotationMatrix[2][0]*(m_iUnrotatedCornerX[i] + m_dX) +
                                  m_dRotationMatrix[2][1]*(m_iUnrotatedCornerY[i] + m_dY) +
