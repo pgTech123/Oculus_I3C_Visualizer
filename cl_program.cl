@@ -13,11 +13,15 @@
 
 bool boundingRectComputed(int id)
 {
-    if(id == 0){
-        return true;
-    }
     //TODO: check memStatusBit in |childId_memStatusBit|
     return false;
+}
+
+void computeSubcorners()
+{
+    //Compute subcorners
+    //Compute bounding rect
+    //Push data to global memory
 }
 
 //BoundingRect order: minx, maxx, miny, maxy
@@ -40,23 +44,22 @@ __kernel void render(__write_only image2d_t resultTexture,
                      __global float3 *cornersArray,
                      __global int4 *boundingRect,
                      __global int *childId_memStatusBit,
-                     __global int *FOV)
+                     __global int *FOV,
+                     __global int *topCubeId)
 {
     //Get pixel we're working on
     int2 coord = (int2)(get_global_id(0), get_global_id(1));
     float4 pixelValue;
 
     //Id of the cube we're currently analysing
-    int cubeId = 0;
+    int cubeId = topCubeId[0]-1;
     int stackStandByCube[16];
     uchar2 stackPointer = 0;
 
     for(int level = numberOfLevels[0]; level >= 0; level--)
     {
-        if(!boundingRectComputed(cubeId)){
-            //Compute subcorners
-            //Compute bounding rect
-            //Push data to global memory
+        if(!boundingRectComputed(cubeId) && cubeId != topCubeId[0]){
+            computeSubcorners();
         }
 
         if(!isInBoundingRect(boundingRect[cubeId], coord)){
@@ -69,7 +72,7 @@ __kernel void render(__write_only image2d_t resultTexture,
             pixelValue = (float4)(pixels[get_global_id(1)], 1.0);    //DEBUG
         }
         else{
-            //update cubeId, ...
+            //update cubeId, stack, ...
         }
     }
 
@@ -80,5 +83,6 @@ __kernel void render(__write_only image2d_t resultTexture,
 
 __kernel void clearMemoryBit(__global int *childId_memStatusBit)
 {
-    //TODO: Set memory bit to 0
+    //Set memory bit to 0
+    childId_memStatusBit[get_global_id(0)] = childId_memStatusBit[get_global_id(0)] & 0x7FFFFFFF;
 }

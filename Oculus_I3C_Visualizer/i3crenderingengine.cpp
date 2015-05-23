@@ -32,6 +32,7 @@ I3CRenderingEngine::I3CRenderingEngine(HDC hDC, HGLRC hRC)
 
     m_clBoundingRect = NULL;
     m_clChildId_memStatusBit =NULL;
+    m_cltopCubeId = NULL;
 
     //Program
     m_program = NULL;
@@ -90,6 +91,9 @@ I3CRenderingEngine::~I3CRenderingEngine()
     }
     if(m_clChildId_memStatusBit != NULL){
         clReleaseMemObject(m_clChildId_memStatusBit);
+    }
+    if(m_cltopCubeId != NULL){
+        clReleaseMemObject(m_cltopCubeId);
     }
 
     clearCubesInMemory();
@@ -219,11 +223,11 @@ void I3CRenderingEngine::render(int eye)
     boundingRect.s[2] = (cl_int)miny;
     boundingRect.s[3] = (cl_int)maxy;
 
-    clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, 0, 8*sizeof(cl_float3),
-                         cornerRotated, 0, NULL, NULL);
+    clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, (m_iTotalNumberOfCubes-1)*8*sizeof(cl_float3),
+                         8*sizeof(cl_float3), cornerRotated, 0, NULL, NULL);
 
-    clEnqueueWriteBuffer(m_queue, m_clBoundingRect, CL_TRUE, 0, sizeof(boundingRect),
-                         &boundingRect, 0, NULL, NULL);
+    clEnqueueWriteBuffer(m_queue, m_clBoundingRect, CL_TRUE, (m_iTotalNumberOfCubes-1)*sizeof(cl_int4),
+                         sizeof(cl_int4), &boundingRect, 0, NULL, NULL);
 
     //Render!
     size_t a[2] = {m_iWidth[eye], m_iHeight[eye]};
@@ -294,9 +298,11 @@ void I3CRenderingEngine::createKernels()
 
 void I3CRenderingEngine::allocateMemory()
 {
+    //TODO: Adjust READ/WRITE rights where needed
     m_clFOV[0] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(cl_int), NULL, NULL);
     m_clFOV[1] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(cl_int), NULL, NULL);
     m_clNumOfLevel = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, NULL);
+    m_cltopCubeId = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, NULL);
 }
 
 Sources_OCL I3CRenderingEngine::loadCLSource(char* filename, unsigned int max_length)
@@ -394,6 +400,11 @@ void I3CRenderingEngine::readNumOfMaps(std::fstream *file)
     }
     //cout << "Number of Cubes: " << m_iTotalNumberOfCubes << endl;  //Debug
 
+    cl_int topCubeId = (cl_int)m_iTotalNumberOfCubes;
+    clEnqueueWriteBuffer(m_queue, m_cltopCubeId, CL_TRUE, 0, sizeof(topCubeId), &topCubeId, 0, NULL, NULL);
+    clSetKernelArg(m_kernelRender[0], 8, sizeof(m_cltopCubeId), &m_cltopCubeId);
+    clSetKernelArg(m_kernelRender[1], 8, sizeof(m_cltopCubeId), &m_cltopCubeId);
+
     //ReferenceCube contains:  uchar map, uchar level, uchar2 IndexPointToBegining
     m_clReferenceCubeMap = clCreateBuffer(m_context, CL_MEM_READ_WRITE,
                                        m_iTotalNumberOfCubes*sizeof(cl_uchar), NULL, NULL);
@@ -435,6 +446,7 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
 {
     unsigned char ucMap = 0;
     cl_uchar *map = new cl_uchar[m_iArrCubeAtLevel[0]];
+    cl_int *childID = new cl_int[m_iArrCubeAtLevel[0]];
 
     int iBufRedArr[8];
     int iBufGreenArr[8];
@@ -456,6 +468,7 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
         iError = readMap(file, &ucMap, &iNumOfPixels);
         if(iError != I3C_SUCCESS){
             delete[] map;
+            delete[] childID;
             return iError;
         }
         iTotalPixels += iNumOfPixels;
@@ -471,6 +484,7 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
         iError = readMap(file, &ucMap, &iNumOfPixels);
         if(iError != I3C_SUCCESS){
             delete[] map;
+            delete[] childID;
             return iError;
         }
 
@@ -487,6 +501,7 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
             pixel[j].s[2] = (float)(iBufBlueArr[j])/255;
         }
         map[i] = (cl_uchar)ucMap;
+        childID[i] = (cl_int)iPixelOffset;
 
         //<<<THIS IS SLOW>>>
         clEnqueueWriteBuffer(m_queue, m_clPixel, CL_TRUE, iPixelOffset*sizeof(cl_float3),
@@ -497,12 +512,15 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
     //Copy maps of the first level
     clEnqueueWriteBuffer(m_queue, m_clReferenceCubeMap, CL_TRUE, 0,
                           m_iArrCubeAtLevel[0]*sizeof(cl_uchar), map, 0, NULL, NULL);
+    clEnqueueWriteBuffer(m_queue, m_clChildId_memStatusBit, CL_TRUE, 0,
+                          m_iArrCubeAtLevel[0]*sizeof(cl_int), childID, 0, NULL, NULL);
 
     //Set args
     clSetKernelArg(m_kernelRender[0], 2, sizeof(m_clPixel), &m_clPixel);
     clSetKernelArg(m_kernelRender[1], 2, sizeof(m_clPixel), &m_clPixel);
 
     delete[] map;
+    delete[] childID;
 
     return I3C_SUCCESS;
 }
@@ -512,8 +530,10 @@ int I3CRenderingEngine::readIndexCubes(std::fstream *file)
     unsigned char ucMap = 0;
     int iMapToBeWritten = m_iTotalNumberOfCubes - m_iArrCubeAtLevel[0];
     cl_uchar *map = new cl_uchar[iMapToBeWritten];
+    cl_int *childID = new cl_int[iMapToBeWritten];
 
     int index = 0;
+    int iOffset = 0;
     int iNumOfChild = 0;
     int iError;
 
@@ -524,21 +544,27 @@ int I3CRenderingEngine::readIndexCubes(std::fstream *file)
             iError = readMap(file, &ucMap, &iNumOfChild);
             if(iError != I3C_SUCCESS){
                 delete[] map;
+                delete[] childID;
                 return iError;
             }
 
-            map[index] = (cl_uchar)ucMap;
+            map[index] = (cl_uchar)ucMap; 
+            childID[index] = (iOffset | (0x01 << 30));  //offset(ID) + reference bit
             index++;
+            iOffset += iNumOfChild;
         }
     }
 
     clEnqueueWriteBuffer(m_queue, m_clReferenceCubeMap, CL_TRUE, m_iArrCubeAtLevel[0]*sizeof(cl_uchar),
                           iMapToBeWritten*sizeof(cl_uchar), map, 0, NULL, NULL);
+    clEnqueueWriteBuffer(m_queue, m_clChildId_memStatusBit, CL_TRUE, m_iArrCubeAtLevel[0]*sizeof(cl_int),
+                          iMapToBeWritten*sizeof(cl_uint), childID, 0, NULL, NULL);
 
     clSetKernelArg(m_kernelRender[0], 3, sizeof(m_clReferenceCubeMap), &m_clReferenceCubeMap);
     clSetKernelArg(m_kernelRender[1], 3, sizeof(m_clReferenceCubeMap), &m_clReferenceCubeMap);
 
     delete[] map;
+    delete[] childID;
     return I3C_SUCCESS;
 }
 
