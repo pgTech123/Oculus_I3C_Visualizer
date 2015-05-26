@@ -460,7 +460,7 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
     int iError;
 
     //Keep a marker in the file
-    std::fstream *marker = file;
+    int marker = file->tellg();
 
     //Read for dimentions
     for(int i = 0; i < m_iArrCubeAtLevel[0]; i++)
@@ -478,7 +478,8 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
     m_clPixel = clCreateBuffer(m_context, CL_MEM_READ_WRITE, iTotalPixels*sizeof(cl_float3), NULL, NULL);
 
     //Read for data
-    file = marker;
+    file->seekg(marker-8);
+
     for(int i = 0; i < m_iArrCubeAtLevel[0]; i++)
     {
         iError = readMap(file, &ucMap, &iNumOfPixels);
@@ -548,8 +549,8 @@ int I3CRenderingEngine::readIndexCubes(std::fstream *file)
                 return iError;
             }
 
-            map[index] = (cl_uchar)ucMap; 
-            childID[index] = (iOffset | (0x01 << 30));  //offset(ID) + reference bit
+            map[index] = (cl_uchar)ucMap;
+            childID[index] = (cl_int)(iOffset | (0x01 << 30));  //offset(ID) + reference bit
             index++;
             iOffset += iNumOfChild;
         }
@@ -558,7 +559,7 @@ int I3CRenderingEngine::readIndexCubes(std::fstream *file)
     clEnqueueWriteBuffer(m_queue, m_clReferenceCubeMap, CL_TRUE, m_iArrCubeAtLevel[0]*sizeof(cl_uchar),
                           iMapToBeWritten*sizeof(cl_uchar), map, 0, NULL, NULL);
     clEnqueueWriteBuffer(m_queue, m_clChildId_memStatusBit, CL_TRUE, m_iArrCubeAtLevel[0]*sizeof(cl_int),
-                          iMapToBeWritten*sizeof(cl_uint), childID, 0, NULL, NULL);
+                          iMapToBeWritten*sizeof(cl_int), childID, 0, NULL, NULL);
 
     clSetKernelArg(m_kernelRender[0], 3, sizeof(m_clReferenceCubeMap), &m_clReferenceCubeMap);
     clSetKernelArg(m_kernelRender[1], 3, sizeof(m_clReferenceCubeMap), &m_clReferenceCubeMap);
