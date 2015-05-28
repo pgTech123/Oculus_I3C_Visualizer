@@ -122,11 +122,14 @@ private:
     cl_mem m_clBoundingRect;
 
     cl_mem m_clChildId_memStatusBit;
-    //  _____________________________
-    // | 1bit | 1bit  |    30 bits   |
-    // |------|-------|--------------|
-    // |status|ref/pix| Child Id     |
+    //  _____________________________________
+    // | 1bit | 1bit  | 1bit  |    30 bits   |
+    // |------|-------|-------|--------------|
+    // |status| lock  |ref/pix| Child Id     |
     cl_mem m_cltopCubeId;
+
+    //DEBUG
+    cl_mem m_clDebugOutput;
 
     //Code that runs on GPU
     cl_program m_program;

@@ -34,6 +34,8 @@ I3CRenderingEngine::I3CRenderingEngine(HDC hDC, HGLRC hRC)
     m_clChildId_memStatusBit =NULL;
     m_cltopCubeId = NULL;
 
+    m_clDebugOutput = NULL;
+
     //Program
     m_program = NULL;
 
@@ -94,6 +96,9 @@ I3CRenderingEngine::~I3CRenderingEngine()
     }
     if(m_cltopCubeId != NULL){
         clReleaseMemObject(m_cltopCubeId);
+    }
+    if(m_clDebugOutput != NULL){
+        clReleaseMemObject(m_clDebugOutput);
     }
 
     clearCubesInMemory();
@@ -198,9 +203,9 @@ void I3CRenderingEngine::render(int eye)
     cl_int4 boundingRect;
     m_transform.computeTransform(xCornersRotated, yCornersRotated, zCornersRotated);
     for(int i = 0; i < 8; i++){
-        cornerRotated[i].s[0] = xCornersRotated[i];
-        cornerRotated[i].s[1] = yCornersRotated[i];
-        cornerRotated[i].s[2] = zCornersRotated[i];
+        cornerRotated[i].s[0] = (cl_float)xCornersRotated[i];
+        cornerRotated[i].s[1] = (cl_float)yCornersRotated[i];
+        cornerRotated[i].s[2] = (cl_float)zCornersRotated[i];
 
         //Bounding rect
         int x = (xCornersRotated[i] / zCornersRotated[i]) - FOV[eye][2];
@@ -223,6 +228,9 @@ void I3CRenderingEngine::render(int eye)
     boundingRect.s[2] = (cl_int)miny;
     boundingRect.s[3] = (cl_int)maxy;
 
+    //std::cout << cornerRotated[0].s[0] << std::endl;
+    //std::cout << xCornersRotated[0] << std::endl;
+
     clEnqueueWriteBuffer(m_queue, m_clRotatedCorners, CL_TRUE, (m_iTotalNumberOfCubes-1)*8*sizeof(cl_float3),
                          8*sizeof(cl_float3), cornerRotated, 0, NULL, NULL);
 
@@ -235,6 +243,11 @@ void I3CRenderingEngine::render(int eye)
     if(error != CL_SUCCESS){
         std::cout << "Task error..." << std::endl;
     }
+
+    //READ DEBUG
+    cl_float3 debugResult;
+    clEnqueueReadBuffer(m_queue, m_clDebugOutput, CL_TRUE, 0, sizeof(cl_float3),&debugResult, 0, NULL, NULL);
+    std::cout << "DEBUG: " << debugResult.s[0] << ", " << debugResult.s[1] << ", " << debugResult.s[2] << std::endl;
 
     //Give back texture ownership to OpenGL
     clFinish(m_queue);
@@ -303,6 +316,11 @@ void I3CRenderingEngine::allocateMemory()
     m_clFOV[1] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(cl_int), NULL, NULL);
     m_clNumOfLevel = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, NULL);
     m_cltopCubeId = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, NULL);
+    //DEBUG
+    m_clDebugOutput = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_float3), NULL, NULL);
+    clSetKernelArg(m_kernelRender[0], 9, sizeof(m_clDebugOutput), &m_clDebugOutput);
+    clSetKernelArg(m_kernelRender[1], 9, sizeof(m_clDebugOutput), &m_clDebugOutput);
+
 }
 
 Sources_OCL I3CRenderingEngine::loadCLSource(char* filename, unsigned int max_length)
@@ -550,7 +568,7 @@ int I3CRenderingEngine::readIndexCubes(std::fstream *file)
             }
 
             map[index] = (cl_uchar)ucMap;
-            childID[index] = (cl_int)(iOffset | (0x01 << 30));  //offset(ID) + reference bit
+            childID[index] = (cl_int)(iOffset | (0x01 << 29));  //offset(ID) + reference bit
             index++;
             iOffset += iNumOfChild;
         }
