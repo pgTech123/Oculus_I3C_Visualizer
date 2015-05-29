@@ -187,9 +187,6 @@ void I3CRenderingEngine::render(int eye)
         std::cout << "Aquirering error..." << std::endl;
     }
 
-    //Clear GPU Memory
-    size_t workItems[1] = {m_iTotalNumberOfCubes};
-    error = clEnqueueNDRangeKernel(m_queue, m_kernelRender[eye], 1, NULL, workItems , NULL, 0, NULL, NULL);
 
     //Compute transforms
     float xCornersRotated[8];
@@ -237,6 +234,14 @@ void I3CRenderingEngine::render(int eye)
     clEnqueueWriteBuffer(m_queue, m_clBoundingRect, CL_TRUE, (m_iTotalNumberOfCubes-1)*sizeof(cl_int4),
                          sizeof(cl_int4), &boundingRect, 0, NULL, NULL);
 
+    //Clear GPU Memory
+    size_t workItems[1] = {m_iTotalNumberOfCubes};
+    error = clEnqueueNDRangeKernel(m_queue, m_kernelRender[eye], 1, NULL, workItems , NULL, 0, NULL, NULL);
+    if(error != CL_SUCCESS){
+        std::cout << "Task error clear..." << std::endl;
+    }
+
+
     //Render!
     size_t a[2] = {m_iWidth[eye], m_iHeight[eye]};
     error = clEnqueueNDRangeKernel(m_queue, m_kernelRender[eye], 2, NULL, a , NULL, 0, NULL, NULL);
@@ -247,7 +252,7 @@ void I3CRenderingEngine::render(int eye)
     //READ DEBUG
     cl_float3 debugResult;
     clEnqueueReadBuffer(m_queue, m_clDebugOutput, CL_TRUE, 0, sizeof(cl_float3),&debugResult, 0, NULL, NULL);
-    std::cout << "DEBUG: " << debugResult.s[0] << ", " << debugResult.s[1] << ", " << debugResult.s[2] << std::endl;
+    std::cout << "DEBUG: " << debugResult.s[0] << ", " << debugResult.s[1] << ", " << debugResult.s[2] /*<< ", " << debugResult.s[3] */<< std::endl;
 
     //Give back texture ownership to OpenGL
     clFinish(m_queue);
