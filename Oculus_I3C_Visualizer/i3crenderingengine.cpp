@@ -187,6 +187,13 @@ void I3CRenderingEngine::render(int eye)
         std::cout << "Aquirering error..." << std::endl;
     }
 
+    //Clear GPU Memory
+    size_t workItems[1] = {m_iTotalNumberOfCubes};
+    error = clEnqueueNDRangeKernel(m_queue, m_kernelClearCornersComputed, 1, NULL, workItems , NULL, 0, NULL, NULL);
+    if(error != CL_SUCCESS){
+        std::cout << "Task error clear..." << std::endl;
+    }//*/
+
 
     //Compute transforms
     float xCornersRotated[8];
@@ -233,13 +240,6 @@ void I3CRenderingEngine::render(int eye)
 
     clEnqueueWriteBuffer(m_queue, m_clBoundingRect, CL_TRUE, (m_iTotalNumberOfCubes-1)*sizeof(cl_int4),
                          sizeof(cl_int4), &boundingRect, 0, NULL, NULL);
-
-    //Clear GPU Memory
-    size_t workItems[1] = {m_iTotalNumberOfCubes};
-    error = clEnqueueNDRangeKernel(m_queue, m_kernelRender[eye], 1, NULL, workItems , NULL, 0, NULL, NULL);
-    if(error != CL_SUCCESS){
-        std::cout << "Task error clear..." << std::endl;
-    }
 
 
     //Render!
