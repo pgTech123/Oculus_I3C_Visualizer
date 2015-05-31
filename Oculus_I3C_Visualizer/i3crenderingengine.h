@@ -127,6 +127,7 @@ private:
     // |------|-------|-------|--------------|
     // |status| lock  |ref/pix| Child Id     |
     cl_mem m_cltopCubeId;
+    cl_mem m_clRenderingOrder;
 
     //DEBUG
     cl_mem m_clDebugOutput;

@@ -33,6 +33,7 @@ I3CRenderingEngine::I3CRenderingEngine(HDC hDC, HGLRC hRC)
     m_clBoundingRect = NULL;
     m_clChildId_memStatusBit =NULL;
     m_cltopCubeId = NULL;
+    m_clRenderingOrder = NULL;
 
     m_clDebugOutput = NULL;
 
@@ -96,6 +97,9 @@ I3CRenderingEngine::~I3CRenderingEngine()
     }
     if(m_cltopCubeId != NULL){
         clReleaseMemObject(m_cltopCubeId);
+    }
+    if(m_clRenderingOrder != NULL){
+        clReleaseMemObject(m_clRenderingOrder);
     }
     if(m_clDebugOutput != NULL){
         clReleaseMemObject(m_clDebugOutput);
@@ -205,7 +209,13 @@ void I3CRenderingEngine::render(int eye)
     int miny = m_iHeight[eye];
     int maxy = 0;
     cl_int4 boundingRect;
+    unsigned char sortedRenderingOrder[8];
+    cl_uchar renderingOrder[8];
+
     m_transform.computeTransform(xCornersRotated, yCornersRotated, zCornersRotated);
+
+    sort(zCornersRotated, sortedRenderingOrder);
+
     for(int i = 0; i < 8; i++){
         cornerRotated[i].s[0] = (cl_float)xCornersRotated[i];
         cornerRotated[i].s[1] = (cl_float)yCornersRotated[i];
@@ -226,6 +236,9 @@ void I3CRenderingEngine::render(int eye)
         if(y > maxy){
             maxy = y;
         }
+
+        renderingOrder[i] = (cl_uchar)sortedRenderingOrder[i];
+        //std::cout << (int)renderingOrder[i] << std::endl;
     }
     boundingRect.s[0] = (cl_int)minx;
     boundingRect.s[1] = (cl_int)maxx;
@@ -241,6 +254,8 @@ void I3CRenderingEngine::render(int eye)
     clEnqueueWriteBuffer(m_queue, m_clBoundingRect, CL_TRUE, (m_iTotalNumberOfCubes-1)*sizeof(cl_int4),
                          sizeof(cl_int4), &boundingRect, 0, NULL, NULL);
 
+    clEnqueueWriteBuffer(m_queue, m_clRenderingOrder, CL_TRUE, 0,
+                         8*sizeof(cl_uchar), &renderingOrder, 0, NULL, NULL);
 
     //Render!
     size_t a[2] = {m_iWidth[eye], m_iHeight[eye]};
@@ -321,10 +336,15 @@ void I3CRenderingEngine::allocateMemory()
     m_clFOV[1] = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4*sizeof(cl_int), NULL, NULL);
     m_clNumOfLevel = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, NULL);
     m_cltopCubeId = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_int), NULL, NULL);
+    m_clRenderingOrder = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 8*sizeof(cl_uchar), NULL, NULL);
+
+    clSetKernelArg(m_kernelRender[0], 9, sizeof(m_clRenderingOrder), &m_clRenderingOrder);
+    clSetKernelArg(m_kernelRender[1], 9, sizeof(m_clRenderingOrder), &m_clRenderingOrder);
+
     //DEBUG
     m_clDebugOutput = clCreateBuffer(m_context, CL_MEM_READ_WRITE, sizeof(cl_float3), NULL, NULL);
-    clSetKernelArg(m_kernelRender[0], 9, sizeof(m_clDebugOutput), &m_clDebugOutput);
-    clSetKernelArg(m_kernelRender[1], 9, sizeof(m_clDebugOutput), &m_clDebugOutput);
+    clSetKernelArg(m_kernelRender[0], 10, sizeof(m_clDebugOutput), &m_clDebugOutput);
+    clSetKernelArg(m_kernelRender[1], 10, sizeof(m_clDebugOutput), &m_clDebugOutput);
 
 }
 
