@@ -39,7 +39,7 @@
 #define LEFT_EYE    0
 #define RIGHT_EYE   1
 
-#define FOCAL_LENGHT    300
+#define FOCAL_LENGHT    500
 
 /* Error Definition */
 #define I3C_SUCCESS             0

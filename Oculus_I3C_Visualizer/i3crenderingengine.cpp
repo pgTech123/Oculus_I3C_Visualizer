@@ -484,17 +484,15 @@ int I3CRenderingEngine::readCubes(std::fstream *file)
     return I3C_SUCCESS;
 }
 
- //WARNING: THIS WILL POTENTIALLY BE REALLY SLOW -> Optimisation to be done HERE!!!
 int I3CRenderingEngine::readPixelCubes(std::fstream *file)
 {
     unsigned char ucMap = 0;
     cl_uchar *map = new cl_uchar[m_iArrCubeAtLevel[0]];
     cl_int *childID = new cl_int[m_iArrCubeAtLevel[0]];
 
-    int iBufRedArr[8];
-    int iBufGreenArr[8];
-    int iBufBlueArr[8];
-    cl_float3 pixel[8];
+    int iBufRedArr;
+    int iBufGreenArr;
+    int iBufBlueArr;
 
     int iPixelOffset = 0;
     int iNumOfPixels;
@@ -514,11 +512,19 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
             delete[] childID;
             return iError;
         }
+        for(int j = 0; j < iNumOfPixels; j++)
+        {
+            //Pixel Reading
+            *file >> iBufRedArr;
+            *file >> iBufGreenArr;
+            *file >> iBufBlueArr;
+        }
         iTotalPixels += iNumOfPixels;
     }
 
     //Allocate memory
     m_clPixel = clCreateBuffer(m_context, CL_MEM_READ_WRITE, iTotalPixels*sizeof(cl_float3), NULL, NULL);
+    cl_float3 *pixel = new cl_float3[iTotalPixels];
 
     //Read for data
     file->seekg(marker-8);
@@ -535,25 +541,24 @@ int I3CRenderingEngine::readPixelCubes(std::fstream *file)
         for(int j = 0; j < iNumOfPixels; j++)
         {
             //Pixel Reading
-            *file >> iBufRedArr[j];
-            *file >> iBufGreenArr[j];
-            *file >> iBufBlueArr[j];
+            *file >> iBufRedArr;
+            *file >> iBufGreenArr;
+            *file >> iBufBlueArr;
 
             //Convert to Float3
-            pixel[j].s[0] = (float)(iBufRedArr[j])/255;
-            pixel[j].s[1] = (float)(iBufGreenArr[j])/255;
-            pixel[j].s[2] = (float)(iBufBlueArr[j])/255;
+            pixel[iPixelOffset+j].s[0] = (cl_float)(iBufRedArr)/255;
+            pixel[iPixelOffset+j].s[1] = (cl_float)(iBufGreenArr)/255;
+            pixel[iPixelOffset+j].s[2] = (cl_float)(iBufBlueArr)/255;
         }
         map[i] = (cl_uchar)ucMap;
         childID[i] = (cl_int)iPixelOffset;
 
-        //<<<THIS IS SLOW>>>
-        clEnqueueWriteBuffer(m_queue, m_clPixel, CL_TRUE, iPixelOffset*sizeof(cl_float3),
-                             iNumOfPixels*sizeof(cl_float3), pixel, 0, NULL, NULL);
         iPixelOffset += iNumOfPixels;
     }
 
     //Copy maps of the first level
+    clEnqueueWriteBuffer(m_queue, m_clPixel, CL_TRUE, 0,
+                         iTotalPixels*sizeof(cl_float3), pixel, 0, NULL, NULL);
     clEnqueueWriteBuffer(m_queue, m_clReferenceCubeMap, CL_TRUE, 0,
                           m_iArrCubeAtLevel[0]*sizeof(cl_uchar), map, 0, NULL, NULL);
     clEnqueueWriteBuffer(m_queue, m_clChildId_memStatusBit, CL_TRUE, 0,

@@ -133,18 +133,6 @@ void OculusApp::createRenderingTexture()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, recommenedTexSize.w, recommenedTexSize.h,
                              0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-        /*if(i == 0){
-            float pixels[] = {
-                0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 1.0f,
-                0.0f, 1.0f, 1.0f,   0.0f, 0.0f, 0.0f
-            };
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_FLOAT, pixels);
-        }else{
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, recommenedTexSize.w, recommenedTexSize.h,
-                                0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        }//*/
-
-
         //Store texture
         m_eyeTexture[i].OGL.Header.API = ovrRenderAPI_OpenGL;
         m_eyeTexture[i].OGL.Header.TextureSize = recommenedTexSize;
