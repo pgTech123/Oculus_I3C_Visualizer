@@ -9,8 +9,9 @@ using namespace std;
 
 #define PI  3.14159265359
 
+// |DST_OCULUS_ORIGIN| and |FOCAL_LENGHT| should have the same value
 #define DST_OCULUS_ORIGIN   500     //mm
-#define FOCAL_LENGHT        300     //mm    //TODO: Fine tune...
+#define FOCAL_LENGHT        500     //mm
 
 /**************************************************************************
  * The purpose of this class is to abstract the the transformations maths.

@@ -174,7 +174,7 @@ void I3CRenderingEngine::setTexture(GLuint texId, int eye)
 
 void I3CRenderingEngine::setPosition(float x, float y, float z)
 {
-    m_transform.setTranslation(x, y, z);
+    m_transform.setTranslation(-x, y, z);
 }
 
 void I3CRenderingEngine::setOrientation(float yaw, float pitch, float roll)
@@ -267,7 +267,7 @@ void I3CRenderingEngine::render(int eye)
     //READ DEBUG
     cl_float3 debugResult;
     clEnqueueReadBuffer(m_queue, m_clDebugOutput, CL_TRUE, 0, sizeof(cl_float3),&debugResult, 0, NULL, NULL);
-    std::cout << "DEBUG: " << debugResult.s[0] << ", " << debugResult.s[1] << ", " << debugResult.s[2] /*<< ", " << debugResult.s[3] */<< std::endl;
+    //std::cout << "DEBUG: " << debugResult.s[0] << ", " << debugResult.s[1] << ", " << debugResult.s[2] /*<< ", " << debugResult.s[3] */<< std::endl;
 
     //Give back texture ownership to OpenGL
     clFinish(m_queue);

@@ -68,7 +68,7 @@ void computeSubcorners(uchar reference,
     int cubeIdCorners = 8*cubeId;
     float3 childCorners[27];
 
-    //Order of computation of midpoints: see diagram...
+    //Order of computation: see diagram cause without it, this is really hard to understand
     uchar childBaseCorner[8] = {0, 1, 10, 9, 3, 4, 13, 12};
     uchar outterCornersIndex[8] = {0, 2, 20, 18, 6, 8, 26, 24};
     uchar midCornersIndex[12] = {1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25};
@@ -90,9 +90,9 @@ void computeSubcorners(uchar reference,
     childCorners[13] = (childCorners[10] + childCorners[16])/2;
 
 
-//printf("a ");   //TODO: figure out why more and more a printed as program runs...
+    //printf("a ");   //TODO: figure out why more and more a printed as program runs...
 
-    //Write cubes compose child (8 potential children)
+    //Write cubes (8 potential children)
     for(uchar i = 0; i < 8; i++){
         //Check if child exist
         if((reference & (0x01 << i)) != 0){
@@ -182,16 +182,14 @@ __kernel void render(__write_only image2d_t resultTexture,
             }
         }
 
-        //------    PUSH CHILD ON THE STACK     -------
+        //------    PUSH CHILDREN ON THE STACK     -------
         uchar cubeMap = references[cubeId];
         int childIdBase = getChildId(childId_memStatusBit[cubeId]);
         int offset = 0;
 
-
-
         if(level > 1){
             for(int i = 0; i < 8; i++){
-                if((cubeMap & (0x01 << renderingOrder[7-i])) != 0){
+                if((cubeMap & (0x01 << renderingOrder[i])) != 0){ //TODO: Order in distance
                     //Push on stack
                     stackCursor++;
                     levelStack[stackCursor] = level;
@@ -206,8 +204,8 @@ __kernel void render(__write_only image2d_t resultTexture,
         }
 
         //-----     FILL PIXEL WITH THE APPROPRIATE COLOR   ------
-        if(level == 0 /*&& stackCursor <= 0*/){
-            pixelValue = (float4)(pixels[get_global_id(1)], 1.0);
+        if(level == 0){
+            pixelValue = (float4)(pixels[cubeId], 1.0);
             break;
         }
     }
