@@ -77,7 +77,7 @@ void computeSubcorners(uchar reference,
     uchar midFacesIndex[6] = {4, 10, 12, 14, 16, 22};
     uchar computeMidFaceWith[6][2] = {{1,7}, {1,19}, {3,21}, {5,23}, {15,17}, {19,25}};
 
-    //Computation
+    //Subcorners computation
     for(uint i = 0; i < 8; i++){
         childCorners[outterCornersIndex[i]] = cornersArray[cubeIdCorners + i];
     }
@@ -102,13 +102,14 @@ void computeSubcorners(uchar reference,
             int maxy = 0;
 
             for(uchar corner = 0; corner < 8; corner++){
-                //Write child corners
+                //Write child corner
                 cornersArray[(childId+offset)*8+corner] = childCorners[childBaseCorner[i]+childBaseCorner[corner]];
 
-                //Compute bounding rech
+                //Compute bounding rect
                 int x = (int)(childCorners[childBaseCorner[i]+childBaseCorner[corner]].x / childCorners[childBaseCorner[i]+childBaseCorner[corner]].z) - FOV[2];
                 int y = (int)(childCorners[childBaseCorner[i]+childBaseCorner[corner]].y / childCorners[childBaseCorner[i]+childBaseCorner[corner]].z) - FOV[1];
 
+                //Bounding rect test
                 if(x < minx){
                     minx = x;
                 }
@@ -121,17 +122,17 @@ void computeSubcorners(uchar reference,
                 if(y > maxy){
                     maxy = y;
                 }
-
-                //Write bounding rect
-                boundingRect[childId+offset].x = minx;
-                boundingRect[childId+offset].y = maxx;
-                boundingRect[childId+offset].z = miny;
-                boundingRect[childId+offset].w = maxy;
             }
+            //Write bounding rect
+            boundingRect[childId+offset].x = minx;
+            boundingRect[childId+offset].y = maxx;
+            boundingRect[childId+offset].z = miny;
+            boundingRect[childId+offset].w = maxy;
+
             offset += 1;
         }
     }
-    atomic_or(childId_memStatusBit+cubeId, 0x80000000);
+    atomic_or(childId_memStatusBit+cubeId, 0x80000000);     //Set "data available" flag
 }
 
 __kernel void render(__write_only image2d_t resultTexture,
@@ -150,16 +151,22 @@ __kernel void render(__write_only image2d_t resultTexture,
     int2 coord = (int2)(get_global_id(0), get_global_id(1));    //Coordinates of the current pixel
     int cubeId = topCubeId[0]-1;                                //Start with the biggest cube
 
-    int levelStack[88]; //Guarantied to work with images of 2048 px or less
-    int idStack[88];    //Guarantied to work with images of 2048 px or less
+    int levelStack[88];                     //Guarantied to work with images of 2048 px or less
+    int idStack[88];                        //Guarantied to work with images of 2048 px or less
     int stackCursor = -1;
 
     //We go down to smaller cube until we reach pixel cubes
     for(int level = numberOfLevels[0]; level >= 0; level--)
     {
-        //------    CHILD COMPUTATION     -------
+        //If pixel level, draw pixel, and get out of the loop
+        if(level == 0){
+            pixelValue = (float4)(pixels[cubeId], 1.0);     //Draw pixel with the right color
+            break;
+        }
+
+        //Compute child corners (and make them available to every other work unit)
         if((childId_memStatusBit[cubeId] & 0x80000000) == 0 &&
-                lockIfNotAlready(childId_memStatusBit, cubeId))    //Not written and not locked
+                lockIfNotAlready(childId_memStatusBit, cubeId))    //if not written and not locked
         {
             computeSubcorners(references[cubeId], cubeId, cornersArray,
                               boundingRect, FOV, childId_memStatusBit, debugOutput);
@@ -167,14 +174,15 @@ __kernel void render(__write_only image2d_t resultTexture,
         //Wait for the data to be set before to go any further
         while(!boundingRectComputed(childId_memStatusBit[cubeId])){}
 
-        //------    CHECK IF PIXEL IS NOT SEEN     --------
+
+        //Check if the current pixel is NOT within the current cube boundaries
         if(!isInBoundingRect(boundingRect[cubeId], coord)){
-            if(stackCursor < 0){
-                pixelValue = (float4)(0.0, 0.0, 0.0, 1.0);      //Not seen => black pixel
+            if(stackCursor < 0){                            //No other possible path
+                pixelValue = (float4)(0.0, 0.0, 0.0, 1.0);  //Not seen => black pixel
                 break;
             }
             else{
-                //Pop stack
+                //Pop stack (try another path)
                 level = levelStack[stackCursor];
                 cubeId = idStack[stackCursor];
                 stackCursor--;
@@ -182,32 +190,23 @@ __kernel void render(__write_only image2d_t resultTexture,
             }
         }
 
-        //------    PUSH CHILDREN ON THE STACK     -------
+        //Push children on the stack (and order their position on the stack)
         uchar cubeMap = references[cubeId];
         int childIdBase = getChildId(childId_memStatusBit[cubeId]);
         int offset = 0;
-
-        if(level > 1){
-            for(int i = 0; i < 8; i++){
-                if((cubeMap & (0x01 << renderingOrder[i])) != 0){ //TODO: Order in distance
-                    //Push on stack
-                    stackCursor++;
-                    levelStack[stackCursor] = level;
-                    idStack[stackCursor] = childIdBase + offset;
-                    offset++;
-                }
+        for(int i = 0; i < 8; i++){
+            if((cubeMap & (0x01 << renderingOrder[7-i])) != 0){ //TODO: Improve the ordering
+                //Push stack
+                stackCursor++;
+                levelStack[stackCursor] = level;
+                idStack[stackCursor] = childIdBase + offset;
+                offset++;
             }
-            //Pop stack
-            level = levelStack[stackCursor];
-            cubeId = idStack[stackCursor];
-            stackCursor--;
         }
-
-        //-----     FILL PIXEL WITH THE APPROPRIATE COLOR   ------
-        if(level == 0){
-            pixelValue = (float4)(pixels[cubeId], 1.0);
-            break;
-        }
+        //Pop stack
+        level = levelStack[stackCursor];
+        cubeId = idStack[stackCursor];
+        stackCursor--;
     }
 
     //Write Image
