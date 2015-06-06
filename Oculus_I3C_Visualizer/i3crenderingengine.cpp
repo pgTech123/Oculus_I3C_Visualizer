@@ -196,7 +196,7 @@ void I3CRenderingEngine::render(int eye)
     error = clEnqueueNDRangeKernel(m_queue, m_kernelClearCornersComputed, 1, NULL, workItems , NULL, 0, NULL, NULL);
     if(error != CL_SUCCESS){
         std::cout << "Task error clear..." << std::endl;
-    }//*/
+    }
 
 
     //Compute transforms
@@ -220,6 +220,8 @@ void I3CRenderingEngine::render(int eye)
         cornerRotated[i].s[0] = (cl_float)xCornersRotated[i];
         cornerRotated[i].s[1] = (cl_float)yCornersRotated[i];
         cornerRotated[i].s[2] = (cl_float)zCornersRotated[i];
+
+        //std::cout << cornerRotated[i].s[0] << ", " << cornerRotated[i].s[1] << ", " << cornerRotated[i].s[2]<< std::endl;
 
         //Bounding rect
         int x = (xCornersRotated[i] / zCornersRotated[i]) - FOV[eye][2];

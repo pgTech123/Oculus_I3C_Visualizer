@@ -24,6 +24,24 @@ bool boundingRectComputed(int childId_memStatusBit)
     return false;       //Not computed
 }
 
+int numberOfHighBitsWithinBoundary(uchar map, int boundary)
+{
+    int count = 0;
+    uchar compareWith = 0x01;
+    for(uchar i = 0; i < boundary; i++){
+        if((map &compareWith) != 0){
+            count ++;
+        }
+        compareWith = compareWith << 1;
+    }
+    return count;
+}
+
+int numberOfHighBits(uchar map)
+{
+    numberOfHighBitsWithinBoundary(map, 8);
+}
+
 bool lockIfNotAlready(__global int* childId_memStatusBit, int id)
 {
     int unlockedValue = (childId_memStatusBit[id] & 0xBFFFFFFF);
@@ -87,7 +105,7 @@ void computeSubcorners(uchar reference,
     for(uchar i = 0; i < 6; i++){
         childCorners[midFacesIndex[i]] = (childCorners[computeMidFaceWith[i][0]] + childCorners[computeMidFaceWith[i][1]])/2;
     }
-    childCorners[13] = (childCorners[10] + childCorners[16])/2;
+    childCorners[13] = (childCorners[12] + childCorners[14])/2;
 
 
     //printf("a ");   //TODO: figure out why more and more a printed as program runs...
@@ -96,9 +114,9 @@ void computeSubcorners(uchar reference,
     for(uchar i = 0; i < 8; i++){
         //Check if child exist
         if((reference & (0x01 << i)) != 0){
-            int minx = 100000;
+            int minx = 1000000;
             int maxx = 0;
-            int miny = 100000;
+            int miny = 1000000;
             int maxy = 0;
 
             for(uchar corner = 0; corner < 8; corner++){
@@ -124,9 +142,9 @@ void computeSubcorners(uchar reference,
                 }
             }
             //Write bounding rect
-            boundingRect[childId+offset].x = minx;
+            boundingRect[childId+offset].x = (minx < 0)? 0:minx;
             boundingRect[childId+offset].y = maxx;
-            boundingRect[childId+offset].z = miny;
+            boundingRect[childId+offset].z = (miny < 0)? 0:miny;
             boundingRect[childId+offset].w = maxy;
 
             offset += 1;
@@ -160,7 +178,7 @@ __kernel void render(__write_only image2d_t resultTexture,
     {
         //If pixel level, draw pixel, and get out of the loop
         if(level == 0){
-            pixelValue = (float4)(pixels[cubeId], 1.0);     //Draw pixel with the right color
+            pixelValue = (float4)(pixels[cubeId], 1.0);         //Draw pixel with the right color
             break;
         }
 
@@ -195,7 +213,9 @@ __kernel void render(__write_only image2d_t resultTexture,
         int childIdBase = getChildId(childId_memStatusBit[cubeId]);
         int offset = 0;
         for(int i = 0; i < 8; i++){
-            if((cubeMap & (0x01 << renderingOrder[7-i])) != 0){ //TODO: Improve the ordering
+            if((cubeMap & (0x01 << renderingOrder[7-i])) != 0){     //TODO: Improve the ordering
+                offset = numberOfHighBitsWithinBoundary(cubeMap, renderingOrder[7-i]);
+
                 //Push stack
                 stackCursor++;
                 levelStack[stackCursor] = level;
