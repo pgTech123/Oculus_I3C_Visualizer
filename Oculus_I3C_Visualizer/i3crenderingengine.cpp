@@ -8,11 +8,8 @@
  * Description:
  * This class creates OpenCL kernels and makes the
  * synchronisation between OpenGL and OpenCL texture
- * ownership. It also reads the I3C file and creates
- * |I3CCubes| classes accordingly to what's written in
- * the file. OCL Kernels are passed to these childs so
- * each cube can access and run code on the GPU. This
- * is like the Mothership.
+ * ownership. It also reads the I3C file tranfer the
+ * data contained in the files to the graphic memory.
  * *********************************************************/
 
 #include "i3crenderingengine.h"
