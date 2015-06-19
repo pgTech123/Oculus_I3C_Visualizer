@@ -236,6 +236,8 @@ void I3CRenderingEngine::render(int eye)
 
         renderingOrder[i] = (cl_uchar)sortedRenderingOrder[i];
         //std::cout << (int)renderingOrder[i] << std::endl;
+
+        //std::cout << xCornersRotated[i] << ", " << yCornersRotated[i] << ", " <<  zCornersRotated[i] << std::endl;
     }
     boundingRect.s[0] = (cl_int)minx;
     boundingRect.s[1] = (cl_int)maxx;

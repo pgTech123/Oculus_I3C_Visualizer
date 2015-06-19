@@ -58,6 +58,12 @@ typedef struct{
 }Sources_OCL;
 
 
+/* *********************************************************
+ * TODO:
+ *  -Make opencl calls asynchronious
+ * *********************************************************/
+
+
 class I3CRenderingEngine
 {
 public:

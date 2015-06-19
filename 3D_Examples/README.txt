@@ -1,1 +1,1 @@
-These files were created with models found on http://tf3dm.com/
+These files were created with free models found on http://tf3dm.com/

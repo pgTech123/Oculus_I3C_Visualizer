@@ -4,6 +4,8 @@
 #
 #-------------------------------------------------
 
+CONFIG += static
+
 QT       += core gui
 QT += opengl
 QMAKE_LFLAGS += /INCREMENTAL:NO

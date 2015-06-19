@@ -83,4 +83,8 @@ void MainWindow::on_pushButtonGo_clicked()
 {
     std::string filePath = ui->lineEditPath->text().toStdString();
     m_OculusApp->startRendering(filePath);
+
+    //TODO: Improvement to be done (userfriendliness)
+    ui->pushButtonGo->setDisabled(true);
+    ui->refresh->setDisabled(true);
 }

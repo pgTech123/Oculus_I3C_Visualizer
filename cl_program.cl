@@ -11,19 +11,17 @@
  *  - render()
  *
  * Clear Memory Bit:
- *  TODO
+ *  Clear memory bit reset the bits that mark the cubes corners/boundaries as computed.
+ *  Must be called between each frame.
  *
  * Render:
- *  Each instance of |render()| is destinate to compute the
- *  value of a specific pixel.
- *  The render kernel should be ___________ (2D) and must fit the size of texture
- * TODO...
+ *  Each instance of |render()| compute the value of a specific pixel.
+ *  The render kernel should be launched width*height times.
  * *********************************************************/
 
 /* *********************************************************************************************
  * KNOWN BUGS / TODO LIST:
  * - (HIGH PRIORITY BUG) Some cube not displayed. Depends partly on head orientation. Reason:?
- *   Problem obvious with file "Altair_256.i3c"
  * - (HIGH PRIORITY BUG) When the image is totally not seen: full screen with random colors
  * - (MEDUIM PRIORITY TODO) Clean the code
  * - (MEDIUM PRIORITY TODO) Optimize the code
@@ -59,7 +57,7 @@ void popStack(__private int *levelStack,    /*input*/
               __private int *idStack,       /*input*/
               __private int *stackCursor,   /*input/output*/
               __private int *level,         /*output*/
-              __private int *cubeId);        /*output*/
+              __private int *cubeId);       /*output*/
 
 
 
@@ -99,17 +97,6 @@ __kernel void render(__write_only image2d_t texture,
             break;
         }
 
-        //Compute child corners (and make them available to every other work unit)
-        if((childId_memStatusBit[currentCubeId] & 0x80000000) == 0 &&
-                lockIfNotAlready(childId_memStatusBit, currentCubeId))    //if not written and not locked
-        {
-            computeSubcorners(references[currentCubeId], currentCubeId, cornersArray,
-                              boundingRect, FOV, childId_memStatusBit, debugOutput);
-        }
-        //Wait for the data to be set before to go any further
-        while(!boundingRectComputed(childId_memStatusBit[currentCubeId])){}
-
-
         //Check if the current pixel is NOT within the current cube boundaries
         if(!isInBoundingRect(boundingRect[currentCubeId], pixelCoord)){
             if(stackCursor < 0){                            //No other possible path
@@ -122,6 +109,17 @@ __kernel void render(__write_only image2d_t texture,
                 continue;
             }
         }
+
+        //Compute child corners (and make them available to every other work unit)
+        if((childId_memStatusBit[currentCubeId] & 0x80000000) == 0 &&
+                lockIfNotAlready(childId_memStatusBit, currentCubeId))    //if not written and not locked
+        {
+            computeSubcorners(references[currentCubeId], currentCubeId, cornersArray,
+                              boundingRect, FOV, childId_memStatusBit, debugOutput);
+        }
+        //Wait for the data to be set before to go any further
+        while((childId_memStatusBit[currentCubeId] & 0x80000000) == 0){}
+
 
         //Push children on the stack (and order their position on the stack)
         uchar cubeMap = references[currentCubeId];
@@ -165,7 +163,7 @@ bool lockIfNotAlready(__global int* childId_memStatusBit, int id)
     return false;       //Was already locked
 }
 
-bool isInBoundingRect(int4 boundingRect, int2 imgCoord)
+bool isInBoundingRect(const int4 boundingRect, const int2 imgCoord)
 {
     //BoundingRect order: minx, maxx, miny, maxy
     if( boundingRect.x <= imgCoord.x &&  /*minx <= x*/
@@ -175,7 +173,9 @@ bool isInBoundingRect(int4 boundingRect, int2 imgCoord)
     {
         return true;
     }
-    return false;
+    else{
+        return false;
+    }
 }
 
 int getChildId(int childId_memStatusBit)
@@ -224,12 +224,12 @@ void computeSubcorners(uchar reference,
         childCorners[outterCornersIndex[i]] = cornersArray[cubeIdCorners + i];
     }
     for(uchar i = 0; i < 12; i++){
-        childCorners[midCornersIndex[i]] = (childCorners[computeMidWith[i][0]] + childCorners[computeMidWith[i][1]])/2;
+        childCorners[midCornersIndex[i]] = (childCorners[computeMidWith[i][0]] + childCorners[computeMidWith[i][1]])/2.0;
     }
     for(uchar i = 0; i < 6; i++){
-        childCorners[midFacesIndex[i]] = (childCorners[computeMidFaceWith[i][0]] + childCorners[computeMidFaceWith[i][1]])/2;
+        childCorners[midFacesIndex[i]] = (childCorners[computeMidFaceWith[i][0]] + childCorners[computeMidFaceWith[i][1]])/2.0;
     }
-    childCorners[13] = (childCorners[10] + childCorners[16])/2;
+    childCorners[13] = (childCorners[10] + childCorners[16])/2.0;
 
     //Write cubes (8 potential children)
     for(uchar i = 0; i < 8; i++){
