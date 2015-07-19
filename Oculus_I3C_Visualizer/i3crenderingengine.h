@@ -6,10 +6,7 @@
  * Lisence  :   GNU General Public License
  *
  * Description:
- * This class creates OpenCL kernels and makes the
- * synchronisation between OpenGL and OpenCL texture
- * ownership. It also reads the I3C file tranfer the
- * data contained in the files to the graphic memory.
+ * This class manage the GPU/CPU interaction.
  * *********************************************************/
 
 #ifndef I3CRENDERINGENGINE_H
@@ -45,12 +42,14 @@
 #define SIZE_NOT_BASE_2         103
 #define FILE_CORRUPTED          104
 
+
 typedef CL_API_ENTRY cl_int (CL_API_CALL *clGetGLContextInfoKHR_fn)(const cl_context_properties * /* properties */,
                                                                     cl_gl_context_info /* param_name */,
                                                                     size_t /* param_value_size */,
                                                                     void * /* param_value */,
                                                                     size_t * /*param_value_size_ret*/);
 
+//Struct used to read the OpenCL Sources
 typedef struct{
     char *sources;
     size_t source_size;
@@ -60,7 +59,7 @@ typedef struct{
 
 /* *********************************************************
  * TODO:
- *  -Make opencl calls asynchronious
+ *  - Make OpenCL calls asynchronious
  * *********************************************************/
 
 
@@ -81,9 +80,9 @@ public:
     void render(int eye = 0);
 
 private:
-    //This function is meant to be called only once at the begining (i.e. in the constructor)
+    //WARNING: These functions are meant to be called only once at the begining (i.e. in the constructor).
+    //WARNING: No error handeling in these function.
     void getOpenGLDevice(HDC hDC, HGLRC hRC);
-
     void createKernels();
     void allocateMemory();
 
@@ -107,40 +106,19 @@ private:
     //Texture Size
     int m_iWidth[2];  //Left/Right
     int m_iHeight[2]; //Left/Right
-    int FOV[2][4];
+    int m_FOV[2][4];
 
     //OpenCL General
     cl_device_id m_device;
     cl_context m_context;
     cl_command_queue m_queue;
 
-    //Memory Global
-    cl_mem m_clTexture[2];  //Left/Right
-    cl_mem m_clFOV[2];      //Left/Right
-    cl_mem m_clReferenceCubeMap;
-    cl_mem m_clPixel;
-    cl_mem m_clNumOfLevel;
-
-    cl_mem m_clRotatedCorners;
-    cl_mem m_clBoundingRect;
-
-    cl_mem m_clChildId_memStatusBit;
-    //  _____________________________________
-    // | 1bit | 1bit  | 1bit  |    30 bits   |
-    // |------|-------|-------|--------------|
-    // |status| lock  |ref/pix| Child Id     |
-    cl_mem m_cltopCubeId;
-    cl_mem m_clRenderingOrder;
-
-    //DEBUG
-    cl_mem m_clDebugOutput;
-
-    //Code that runs on GPU
+    //Program that runs on the GPU
     cl_program m_program;
     cl_kernel m_kernelClearCornersComputed;
     cl_kernel m_kernelRender[2];  //Left/Right
 
-    //--------  IMAGE  ----------
+    //Transform
     Transform m_transform;
 
     //Image Property
@@ -148,6 +126,32 @@ private:
     int m_iNumberOfLevels;
     int *m_iArrCubeAtLevel;
     int m_iTotalNumberOfCubes;
+
+
+    //-------------------------------
+    // Memory used by OpenCL program
+    //-------------------------------
+
+    //Textures/FOV
+    cl_mem m_clTexture[2];  //Left/Right
+    cl_mem m_clFOV[2];      //Left/Right
+
+    //Memory used internally by the rendering algorithm
+    cl_mem m_clRotatedCorners;
+    cl_mem m_clBoundingRect;
+
+    //Image data on GPU
+    cl_mem m_clChildId_memStatusBit;
+    cl_mem m_cltopCubeId;
+    cl_mem m_clReferenceCubeMap;
+    cl_mem m_clPixel;
+    cl_mem m_clNumOfLevel;
+
+    //Rendering Instructions
+    cl_mem m_clRenderingOrder;
+
+    //Debug
+    cl_mem m_clDebugOutput;
 };
 
 #endif // I3CRENDERINGENGINE_H
