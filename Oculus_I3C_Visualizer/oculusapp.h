@@ -31,7 +31,6 @@
 #define OCULUS_NO_ERROR            0
 #define OCULUS_NO_DEVICE_FOUND     101
 
-//TODO: when a key pressed -> m_bDismissHsw = true
 
 class OculusApp: public QGLWidget
 {
@@ -43,7 +42,8 @@ public:
 
     int initOculusDevice();
     void shutdownOculusDevice();
-    void startRendering(std::string filename);
+    bool startRendering(std::string filename);
+    void stopRendering();
 
 private:
     void initRenderingConfig();

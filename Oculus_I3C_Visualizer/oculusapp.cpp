@@ -19,27 +19,20 @@ OculusApp::OculusApp():QGLWidget()
     m_timer = new QTimer(this);
 
     m_RenderingEngine = NULL;
-
-    //TODO: Set to false and implement dismiss
     m_bDismissHsw = true;
 }
 
 OculusApp::~OculusApp()
 {
-    disconnect(m_timer, SIGNAL(timeout()), this, SLOT(RenderScene()));
+    this->stopRendering();
     this->shutdownOculusDevice();
     ovr_Shutdown();
-
-    if(m_RenderingEngine != NULL){
-        delete m_RenderingEngine;
-    }
 }
 
 int OculusApp::initOculusDevice()
 {
     m_hmd = ovrHmd_Create(0);
     if(m_hmd){
-        //Use Orientation, Position and MagnYawCorrection if available
         ovrHmd_ConfigureTracking(m_hmd, ovrTrackingCap_Orientation |
                                  ovrTrackingCap_MagYawCorrection |
                                  ovrTrackingCap_Position, 0);
@@ -57,13 +50,13 @@ void OculusApp::shutdownOculusDevice()
     }
 }
 
-void OculusApp::startRendering(std::string filename)
+bool OculusApp::startRendering(std::string filename)
 {
     if(!m_hmd){
-        return;
+        return false;
     }
 
-    //Full screen on the Oculus
+    //Full screen on the Oculus in a Qt way :P
     this->move(QPoint(m_hmd->WindowsPos.x, m_hmd->WindowsPos.y));
     this->showFullScreen();
 
@@ -73,19 +66,34 @@ void OculusApp::startRendering(std::string filename)
                               m_hmd->DefaultEyeFov, m_eyeRenderDesc );
     ovrHmd_AttachToWindow(m_hmd, m_renderingConfig.OGL.Window, NULL, NULL);
 
-    //Rendering Engine Initialisation
+    //I3C Rendering Engine Initialisation
     m_RenderingEngine = new I3CRenderingEngine(wglGetCurrentDC(), wglGetCurrentContext());
 
-    //Load the model in the engine
-    m_RenderingEngine->openFile(filename);
+    //Try to load the model on the engine. Return false and shutdown rendering engine if error.
+    if(m_RenderingEngine->openFile(filename) != I3C_SUCCESS){
+        this->stopRendering();
+        return false;
+    }
 
     //Setting Parameters
-    this->createRenderingTexture();
-    this->initParameters();     //Texture must be called before setting FOV
+    this->createRenderingTexture(); //This function MUST be called before |this->initParameters()|
+    this->initParameters();
 
-    //Start to loop
+    //Start the loop
     connect(m_timer, SIGNAL(timeout()), this, SLOT(RenderScene()));
     m_timer->start();
+
+    return true;
+}
+
+void OculusApp::stopRendering()
+{
+    disconnect(m_timer, SIGNAL(timeout()), this, SLOT(RenderScene()));
+
+    if(m_RenderingEngine != NULL){
+        delete m_RenderingEngine;
+        m_RenderingEngine = NULL;
+    }
 }
 
 void OculusApp::initRenderingConfig()
@@ -104,6 +112,7 @@ void OculusApp::initParameters()
     m_eyeRenderDesc[0] = ovrHmd_GetRenderDesc(m_hmd, ovrEye_Left, m_eyeFov[0]);
     m_eyeRenderDesc[1] = ovrHmd_GetRenderDesc(m_hmd, ovrEye_Right, m_eyeFov[1]);
     m_viewOffset[0] = m_eyeRenderDesc[0].HmdToEyeViewOffset;
+    m_viewOffset[1] = m_eyeRenderDesc[1].HmdToEyeViewOffset;
 
     m_RenderingEngine->setFOV(m_eyeFov[0].DownTan, m_eyeFov[0].UpTan,
                              m_eyeFov[0].RightTan, m_eyeFov[0].LeftTan, LEFT_EYE);
@@ -150,7 +159,6 @@ void OculusApp::createRenderingTexture()
 void OculusApp::RenderScene()
 {
     //Health & Safety warning
-    //TODO: WORK TO DO HERE: Dismiss not auto
     ovrHmd_GetHSWDisplayState(m_hmd, &m_hswDisplayState);
     if(m_hswDisplayState.Displayed && m_bDismissHsw){
         ovrHmd_DismissHSWDisplay(m_hmd);
@@ -166,6 +174,7 @@ void OculusApp::RenderScene()
 
         ovrHmd_BeginFrame(m_hmd, 0);
 
+        //For each eye: render
         for(int eyeIndex = 0; eyeIndex < 2; eyeIndex++){
             //Get latest position
             ovrHmd_GetEyePoses(m_hmd, 0, m_viewOffset, eyeRenderPose, NULL);
@@ -199,6 +208,7 @@ void OculusApp::RenderScene()
             eyeTex[i].OGL.Header.RenderViewport.Size.w = m_eyeTexture[i].OGL.Header.TextureSize.w;
             eyeTex[i].OGL.TexId = m_eyeTexture[i].OGL.TexId;
         }
+
         ovrHmd_EndFrame(m_hmd, eyeRenderPose, &eyeTex[0].Texture);
     }
 }

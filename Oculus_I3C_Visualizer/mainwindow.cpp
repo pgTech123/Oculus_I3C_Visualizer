@@ -17,12 +17,13 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    //UI setup
     ui->setupUi(this);
     this->setFixedWidth(400);
     this->setFixedHeight(200);
-
     ui->pushButtonGo->setEnabled(false);
 
+    //Try to find oculus device
     m_OculusApp = new OculusApp();
     this->initOculusDevice();
 }
@@ -40,6 +41,7 @@ void MainWindow::closeEvent(QCloseEvent*)
 void MainWindow::initOculusDevice()
 {
     int error = m_OculusApp->initOculusDevice();
+
     if(error == OCULUS_NO_ERROR){
         ui->pushButtonGo->setEnabled(true);
         ui->labelStatus->setText("Device Found");
@@ -63,6 +65,7 @@ void MainWindow::shutdownOculusDevice()
 
 void MainWindow::on_refresh_clicked()
 {
+    //Shutdown and restart Oculus
     if(ui->pushButtonGo->isEnabled()){
         m_OculusApp->shutdownOculusDevice();
     }
@@ -81,10 +84,16 @@ void MainWindow::on_load_clicked()
 
 void MainWindow::on_pushButtonGo_clicked()
 {
-    std::string filePath = ui->lineEditPath->text().toStdString();
-    m_OculusApp->startRendering(filePath);
-
-    //TODO: Improvement to be done (userfriendliness)
-    ui->pushButtonGo->setDisabled(true);
-    ui->refresh->setDisabled(true);
+    if(ui->pushButtonGo->text() != "Stop"){
+        std::string filePath = ui->lineEditPath->text().toStdString();
+        if(m_OculusApp->startRendering(filePath)){
+            ui->pushButtonGo->setText("Stop");
+            ui->refresh->setDisabled(true);
+        }
+    }
+    else{
+        m_OculusApp->stopRendering();
+        ui->pushButtonGo->setText("GO!");
+        ui->refresh->setDisabled(false);
+    }
 }

@@ -35,7 +35,10 @@ public:
     void closeEvent(QCloseEvent*);
 
 private:
+    //Try to find Oculus Device and update UI if found/not found
     void initOculusDevice();
+
+    //Shutdown cleanly the Oculus Software
     void shutdownOculusDevice();
 
 private slots:

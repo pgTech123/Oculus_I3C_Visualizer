@@ -34,7 +34,6 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/OculusSDK/LibOVR/Lib/Windows/Win32/Release/VS2010/ -lLibovr
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/OculusSDK/LibOVR/Lib/Windows/Win32/Debug/VS2010/ -lLibovr
 
 LIBS += -lWinmm
 LIBS += -lws2_32
