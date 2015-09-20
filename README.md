@@ -11,6 +11,6 @@ Instructions:
 Move cl_program.cl next to the executable.
 
 Known issue: 
-- OpenCL is hardcoded to start on the first platform available; it might not be the one on which OpenGL runs. If it's not the one on which openGL runs, the program will crash. 
+- OpenCL is hardcoded to start on the first platform available; it might not be the one on which OpenGL runs. If it's not the one on which OpenGL runs, the program will crash. 
 - Problem in the rendering: reason still unknown...
-- Approximation in the rendering(that needs to be considered afterall): cubes are not necesserily ordered uniformly across the image. This might cause wierd parts on the rendered image.
+- Approximation in the rendering (that needs to be considered after all): cubes are not necessarily ordered uniform across the image. This might cause weird parts of the rendered image.
