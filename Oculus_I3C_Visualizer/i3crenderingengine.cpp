@@ -280,26 +280,36 @@ void I3CRenderingEngine::render(int eye)
 //WARNING: No error handeling in this function.
 void I3CRenderingEngine::getOpenGLDevice(HDC hDC, HGLRC hRC)
 {
+    cl_int status;
     cl_uint platAvail;
-    cl_platform_id platform;
+    cl_uint platformCount = 0;
+    cl_platform_id platform[MAX_NUMBER_OF_PLATFORM];
 
-    //Get platform
-    clGetPlatformIDs(1, &platform, &platAvail);
-    cl_context_properties props[] = {CL_CONTEXT_PLATFORM, (cl_context_properties)platform,
-                                     CL_GL_CONTEXT_KHR,   (cl_context_properties)hRC,
-                                     CL_WGL_HDC_KHR,      (cl_context_properties)hDC, 0};
+    //Get platforms
+    clGetPlatformIDs(0, NULL, &platformCount);
+    clGetPlatformIDs(platformCount, platform, NULL);
 
-    //Find device on which OpenGL runs
-    clGetGLContextInfoKHR_fn _clGetGLContextInfoKHR = (clGetGLContextInfoKHR_fn)clGetExtensionFunctionAddress("clGetGLContextInfoKHR");
-    _clGetGLContextInfoKHR(props, CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR, sizeof(cl_device_id), &m_device, NULL);
+    for (cl_uint i=0; i < platformCount; i++)
+    {
+        cl_context_properties props[] = {CL_CONTEXT_PLATFORM, (cl_context_properties)platform[i],
+                                         CL_GL_CONTEXT_KHR,   (cl_context_properties)hRC,
+                                         CL_WGL_HDC_KHR,      (cl_context_properties)hDC, 0};
 
-    //Create Context and command queue on that device
-    m_context = clCreateContext(props, 1, &m_device, 0, 0, NULL);
-    m_queue = clCreateCommandQueue(m_context, m_device, CL_QUEUE_PROFILING_ENABLE, NULL);
+        //Find device on which OpenGL runs
+        clGetGLContextInfoKHR_fn _clGetGLContextInfoKHR = (clGetGLContextInfoKHR_fn)clGetExtensionFunctionAddress("clGetGLContextInfoKHR");
+        status = _clGetGLContextInfoKHR(props, CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR, sizeof(cl_device_id), &m_device, NULL);
 
-    //Load kernels and allocate memory
-    this->createKernels();
-    this->allocateMemory();
+        if(status == CL_SUCCESS){
+            //Create Context and command queue on that device
+            m_context = clCreateContext(props, 1, &m_device, 0, 0, NULL);
+            m_queue = clCreateCommandQueue(m_context, m_device, CL_QUEUE_PROFILING_ENABLE, NULL);
+
+            //Load kernels and allocate memory
+            this->createKernels();
+            this->allocateMemory();
+            return;
+        }
+    }
 }
 
 void I3CRenderingEngine::createKernels()
